@@ -20,7 +20,7 @@ class ZeroEmpireApp: NSObject, NSApplicationDelegate {
 
         Safely purges temporary caches, render scratch files, and system data bloat across 400+ creative apps, browsers, and developer tools.
 
-        ✓ 100% Safe: Personal files, active projects, and login sessions remain untouched.
+        • 100% Safe: Personal files, active projects, and login sessions remain untouched.
         """
         alert.alertStyle = .informational
         if let icon = appIcon {
@@ -52,13 +52,13 @@ class ZeroEmpireApp: NSObject, NSApplicationDelegate {
         
         // 5. Native Notification
         sendNotification(
-            title: "ZeroEmpire: Mac Optimized!",
+            title: "ZeroEmpire: Mac Optimized",
             message: "Reclaimed \(reclaimedFormatted) across 400+ apps & system storage."
         )
         
         // 6. Clean Success Modal
         let successAlert = NSAlert()
-        successAlert.messageText = "🎉 Mac Optimized!"
+        successAlert.messageText = "Mac Optimized"
         successAlert.informativeText = """
         ZeroEmpire has successfully cleaned your system.
 
