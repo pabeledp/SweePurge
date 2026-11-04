@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# ZeroEmpire: Universal System Storage & App Cache Purger (CLI Engine)
+# SweePurge: Universal System Storage & App Cache Purger (CLI Engine)
 # Supports 400+ applications: Creative Suites, 3D, Video, Browsers, IDEs & Dev tools
 # ==============================================================================
 
 set -e
 
-echo "👑 ZeroEmpire: Starting Universal Storage Optimization..."
+echo "🧹 SweePurge: Starting Universal Storage Optimization..."
 
 FREE_BEFORE=$(df -g / | awk 'NR==2 {print $4}')
 

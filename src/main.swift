@@ -1,7 +1,7 @@
 import Cocoa
 import Foundation
 
-class ZeroEmpireApp: NSObject, NSApplicationDelegate {
+class SweePurgeApp: NSObject, NSApplicationDelegate {
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.activate(ignoringOtherApps: true)
@@ -14,7 +14,7 @@ class ZeroEmpireApp: NSObject, NSApplicationDelegate {
         
         // 1. Show Clean, Premium Confirmation Dialog
         let alert = NSAlert()
-        alert.messageText = "ZeroEmpire Storage Purger"
+        alert.messageText = "SweePurge Storage Purger"
         alert.informativeText = """
         Ready to optimize your Mac and reclaim disk space?
 
@@ -52,7 +52,7 @@ class ZeroEmpireApp: NSObject, NSApplicationDelegate {
         
         // 5. Native Notification
         sendNotification(
-            title: "ZeroEmpire: Mac Optimized",
+            title: "SweePurge: Mac Optimized",
             message: "Reclaimed \(reclaimedFormatted) across 400+ apps & system storage."
         )
         
@@ -60,7 +60,7 @@ class ZeroEmpireApp: NSObject, NSApplicationDelegate {
         let successAlert = NSAlert()
         successAlert.messageText = "Mac Optimized"
         successAlert.informativeText = """
-        ZeroEmpire has successfully cleaned your system.
+        SweePurge has successfully cleaned your system.
 
         • Storage Reclaimed: \(reclaimedFormatted)
         • Total Available Space: \(formatBytes(freeAfter))
@@ -329,7 +329,7 @@ class ZeroEmpireApp: NSObject, NSApplicationDelegate {
 
 // Entry Point
 let app = NSApplication.shared
-let delegate = ZeroEmpireApp()
+let delegate = SweePurgeApp()
 app.delegate = delegate
 app.setActivationPolicy(.regular)
 app.run()

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# ZeroEmpire: Universal Storage Clutter Scanner
+# SweePurge: Universal Storage Clutter Scanner
 # Scans cache across 400+ Mac applications and system storage
 
-echo "👑 ZeroEmpire: Scanning 400+ Softwares for Cleanable Cache..."
+echo "🔍 SweePurge: Scanning 400+ Softwares for Cleanable Cache..."
 echo "============================================================="
 
 calc_size() {
@@ -44,4 +44,4 @@ echo "  • User Logs & Reports         : $(calc_size "$HOME/Library/Logs")"
 echo "  • Trash                       : $(calc_size "$HOME/.Trash")"
 
 echo "============================================================="
-echo "⚡ Launch ZeroEmpire.app to purge all 400+ software caches in 1-Click!"
+echo "⚡ Launch SweePurge.app to purge all 400+ software caches in 1-Click!"

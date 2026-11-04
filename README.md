@@ -1,26 +1,26 @@
 <div align="center">
 
-<img src="assets/icon_1024.png" width="120" height="120" alt="ZeroEmpire Logo" style="border-radius: 26px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);"/>
+<img src="assets/icon_1024.png" width="120" height="120" alt="SweePurge Logo" style="border-radius: 26px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);"/>
 
-# ZeroEmpire
+# SweePurge
 ### 1-Click Universal System Storage & App Cache Purger for macOS
 
 [![macOS](https://img.shields.io/badge/macOS-12.0%2B-000000?style=flat-square&logo=apple&logoColor=white)](https://apple.com)
 [![Swift](https://img.shields.io/badge/Language-Swift%205-FA7343?style=flat-square&logo=swift&logoColor=white)](https://swift.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.flat-square)](LICENSE)
-[![Release](https://img.shields.io/badge/Version-2.0.0-emerald?style=flat-square)](https://github.com/pabeledp/ZeroEmpire/releases)
+[![Release](https://img.shields.io/badge/Version-2.0.0-emerald?style=flat-square)](https://github.com/pabeledp/SweePurge/releases)
 
 <p align="center">
   <b>Tired of Mac's mysterious "System Data" and giant software caches eating all your disk space?</b><br/>
-  ZeroEmpire instantly purges gigabytes of caches across <b>400+ professional creative suites, browsers, IDEs, and system bloat</b> in 1-Click.
+  SweePurge instantly purges gigabytes of caches across <b>400+ professional creative suites, browsers, IDEs, and system bloat</b> in 1-Click.
 </p>
 
 ---
 
-### <img src="assets/icons/download.svg" width="20" height="20" align="center" /> Download ZeroEmpire for Mac
+### <img src="assets/icons/download.svg" width="20" height="20" align="center" /> Download SweePurge for Mac
 
-<a href="https://github.com/pabeledp/ZeroEmpire/raw/main/ZeroEmpire.dmg">
-  <img src="https://custom-icon-badges.demolab.com/badge/DOWNLOAD-ZeroEmpire.dmg%20(Direct%20Install)-007AFF?style=for-the-badge&logo=download&logoColor=white" height="48" alt="Download ZeroEmpire"/>
+<a href="https://github.com/pabeledp/SweePurge/raw/main/SweePurge.dmg">
+  <img src="https://custom-icon-badges.demolab.com/badge/DOWNLOAD-SweePurge.dmg%20(Direct%20Install)-007AFF?style=for-the-badge&logo=download&logoColor=white" height="48" alt="Download SweePurge"/>
 </a>
 
 <br/>
@@ -40,13 +40,13 @@ Professional software tools silently hoard gigabytes of cache and scratch files 
 * **Browsers & Desktop Apps**: Chrome, Safari, Slack, Discord, Teams, Spotify, and Figma continuously hoard media and web cache.
 * **macOS System Data**: Time Machine local snapshots and system diagnostic reports secretly lock up disk space.
 
-**ZeroEmpire** safely purges these with a **single, elegant confirmation popup**—zero terminal windows, zero bloat, and zero battery impact.
+**SweePurge** safely purges these with a **single, elegant confirmation popup**—zero terminal windows, zero bloat, and zero battery impact.
 
 ---
 
 ## <img src="assets/icons/layers.svg" width="20" height="20" align="center" /> Supported Softwares & Tools (400+ Covered)
 
-ZeroEmpire features a multi-tiered intelligent cleaning architecture that purges caches across:
+SweePurge features a multi-tiered intelligent cleaning architecture that purges caches across:
 
 ### <img src="assets/icons/video.svg" width="18" height="18" align="center" /> 1. Video, Motion & VFX
 * **Adobe Creative Cloud**: Premiere Pro, After Effects, Media Encoder, Audition, Character Animator, Animate
@@ -92,9 +92,9 @@ ZeroEmpire features a multi-tiered intelligent cleaning architecture that purges
 ## <img src="assets/icons/play.svg" width="20" height="20" align="center" /> How to Use
 
 ### 1. Download & Run
-1. Download [**ZeroEmpire.dmg**](https://github.com/pabeledp/ZeroEmpire/raw/main/ZeroEmpire.dmg).
-2. Drag **ZeroEmpire** into your **Applications** folder.
-3. Open **ZeroEmpire** from Spotlight or Applications.
+1. Download [**SweePurge.dmg**](https://github.com/pabeledp/SweePurge/raw/main/SweePurge.dmg).
+2. Drag **SweePurge** into your **Applications** folder.
+3. Open **SweePurge** from Spotlight or Applications.
 4. Click **"Clean All Caches Now"** on the popup.
 5. Reclaim gigabytes within seconds and get a detailed completion alert.
 

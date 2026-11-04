@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-# Packages ZeroEmpire.app into an easy-to-share ZeroEmpire.dmg installer with custom icon
+# Packages SweePurge.app into an easy-to-share SweePurge.dmg installer with custom icon
 
 set -e
 
-PROJECT_DIR="/Users/rmacstudio2/Documents/ZeroEmpire"
+PROJECT_DIR="/Users/rmacstudio2/Documents/SweePurge"
 DMG_DIR="$PROJECT_DIR/build_dmg"
-DMG_OUTPUT="$PROJECT_DIR/ZeroEmpire.dmg"
-APP_PATH="$PROJECT_DIR/ZeroEmpire.app"
+DMG_OUTPUT="$PROJECT_DIR/SweePurge.dmg"
+APP_PATH="$PROJECT_DIR/SweePurge.app"
 ICON_PATH="$PROJECT_DIR/assets/icon_1024.png"
 ICNS_PATH="$PROJECT_DIR/assets/AppIcon.icns"
 
-echo "📦 Creating ZeroEmpire.dmg installer..."
+echo "📦 Creating SweePurge.dmg installer..."
 rm -rf "$DMG_DIR" "$DMG_OUTPUT"
 mkdir -p "$DMG_DIR"
 
@@ -29,7 +29,7 @@ if [ -f "$ICNS_PATH" ]; then
 fi
 
 # Create disk image
-hdiutil create -volname "ZeroEmpire" -srcfolder "$DMG_DIR" -ov -format UDZO "$DMG_OUTPUT"
+hdiutil create -volname "SweePurge" -srcfolder "$DMG_DIR" -ov -format UDZO "$DMG_OUTPUT"
 
 rm -rf "$DMG_DIR"
 
