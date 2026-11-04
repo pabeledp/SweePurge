@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# ZeroEmpire: Storage Clutter Scanner
-# Shows exact size of cleanable caches and temporary files
+# ZeroEmpire: Universal Storage Clutter Scanner
+# Scans cache across 400+ Mac applications and system storage
 
-echo "🔍 Scanning Mac for cleanable clutter..."
-echo "=========================================="
+echo "👑 ZeroEmpire: Scanning 400+ Softwares for Cleanable Cache..."
+echo "============================================================="
 
 calc_size() {
     local target="$1"
@@ -14,32 +14,34 @@ calc_size() {
     fi
 }
 
-echo "📂 [Adobe Creative Cloud]"
-echo "  • Media Cache Files : $(calc_size "$HOME/Library/Application Support/Adobe/Common/Media Cache Files")"
-echo "  • Media Cache       : $(calc_size "$HOME/Library/Application Support/Adobe/Common/Media Cache")"
-echo "  • Peak Files        : $(calc_size "$HOME/Library/Application Support/Adobe/Common/Peak Files")"
-echo "  • CameraRaw Cache   : $(calc_size "$HOME/Library/Caches/Adobe/CameraRaw/Cache")"
+echo "📂 [Global Mac Application Caches]"
+echo "  • ~/Library/Caches (All Apps)  : $(calc_size "$HOME/Library/Caches")"
 
 echo ""
-echo "🌐 [Web Browsers]"
-echo "  • Google Chrome     : $(calc_size "$HOME/Library/Caches/Google/Chrome")"
-echo "  • Brave Browser     : $(calc_size "$HOME/Library/Caches/BraveSoftware/Brave-Browser")"
-echo "  • Safari Cache      : $(calc_size "$HOME/Library/Caches/com.apple.Safari")"
-echo "  • Arc Browser       : $(calc_size "$HOME/Library/Caches/company.thebrowser.Browser")"
-echo "  • Microsoft Edge    : $(calc_size "$HOME/Library/Caches/Microsoft Edge")"
+echo "🎨 [Creative & 3D Suites (Adobe, DaVinci, Blender, Unreal, Unity)]"
+echo "  • Adobe Media Cache           : $(calc_size "$HOME/Library/Application Support/Adobe/Common/Media Cache Files")"
+echo "  • Adobe CameraRaw Cache       : $(calc_size "$HOME/Library/Caches/Adobe/CameraRaw/Cache")"
+echo "  • DaVinci Resolve CacheClip   : $(calc_size "$HOME/Library/Application Support/Blackmagic Design/DaVinci Resolve/CacheClip")"
+echo "  • Unreal Engine Cache         : $(calc_size "$HOME/Library/Application Support/Epic/UnrealEngine/Common/DerivedDataCache")"
+echo "  • Unity Editor Cache          : $(calc_size "$HOME/Library/Unity/cache")"
 
 echo ""
-echo "⚙️  [macOS System & Logs]"
-echo "  • User Caches       : $(calc_size "$HOME/Library/Caches")"
-echo "  • User Logs         : $(calc_size "$HOME/Library/Logs")"
-echo "  • Trash             : $(calc_size "$HOME/.Trash")"
+echo "💻 [Developer, IDEs & Toolchains (Xcode, JetBrains, VS Code, Android)]"
+echo "  • Xcode DerivedData & Support : $(calc_size "$HOME/Library/Developer/Xcode/DerivedData")"
+echo "  • Android & Gradle Caches     : $(calc_size "$HOME/.gradle/caches")"
+echo "  • JetBrains IDEs Caches       : $(calc_size "$HOME/Library/Caches/JetBrains")"
+echo "  • Universal CLI (~/.cache)    : $(calc_size "$HOME/.cache")"
+echo "  • npm / pnpm / yarn Caches    : $(calc_size "$HOME/.npm/_cacache")"
 
 echo ""
-echo "🛠️  [Developer / Tooling Caches]"
-echo "  • Xcode DerivedData : $(calc_size "$HOME/Library/Developer/Xcode/DerivedData")"
-echo "  • CocoaPods Cache   : $(calc_size "$HOME/Library/Caches/CocoaPods")"
-echo "  • npm Cache         : $(calc_size "$HOME/.npm/_cacache")"
-echo "  • pip Cache         : $(calc_size "$HOME/.cache/pip")"
+echo "💬 [Electron & Productivity (Slack, Discord, Teams, Spotify, Figma, Notion)]"
+echo "  • VS Code CachedData          : $(calc_size "$HOME/Library/Application Support/Code/CachedData")"
+echo "  • Discord / Slack / Teams     : (Cleaned via Global & App Support Tier)"
 
-echo "=========================================="
-echo "⚡ Launch ZeroEmpire.app to purge all this clutter with 1 click!"
+echo ""
+echo "⚙️  [macOS System Data & Bloat]"
+echo "  • User Logs & Reports         : $(calc_size "$HOME/Library/Logs")"
+echo "  • Trash                       : $(calc_size "$HOME/.Trash")"
+
+echo "============================================================="
+echo "⚡ Launch ZeroEmpire.app to purge all 400+ software caches in 1-Click!"

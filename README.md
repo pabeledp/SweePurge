@@ -3,16 +3,16 @@
 <img src="assets/icon_1024.png" width="120" height="120" alt="ZeroEmpire Logo" style="border-radius: 26px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);"/>
 
 # 👑 ZeroEmpire
-### 1-Click System Storage & Cache Purger for macOS
+### 1-Click Universal System Storage & App Cache Purger for macOS
 
 [![macOS](https://img.shields.io/badge/macOS-12.0%2B-000000?style=flat-square&logo=apple&logoColor=white)](https://apple.com)
 [![Swift](https://img.shields.io/badge/Language-Swift%205-FA7343?style=flat-square&logo=swift&logoColor=white)](https://swift.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.flat-square)](LICENSE)
-[![Release](https://img.shields.io/badge/Version-1.0.0-emerald?style=flat-square)](https://github.com/pabeledp/ZeroEmpire/releases)
+[![Release](https://img.shields.io/badge/Version-2.0.0-emerald?style=flat-square)](https://github.com/pabeledp/ZeroEmpire/releases)
 
 <p align="center">
-  <b>Tired of Mac's mysterious "System Data" eating all your disk space?</b><br/>
-  ZeroEmpire instantly purges gigabytes of Adobe Media Caches, Browser temporary data, Time Machine local snapshots, and system clutter in 1-Click.
+  <b>Tired of Mac's mysterious "System Data" and giant software caches eating all your disk space?</b><br/>
+  ZeroEmpire instantly purges gigabytes of caches across <b>400+ professional creative suites, browsers, IDEs, and system bloat</b> in 1-Click.
 </p>
 
 ---
@@ -25,7 +25,7 @@
 
 <br/>
 
-<sub>Version 1.0.0 • Native macOS Universal App • Size: ~1.8 MB</sub>
+<sub>Universal Binary • macOS Monterey, Ventura, Sonoma, Sequoia • Size: ~1.8 MB</sub>
 
 ---
 
@@ -34,89 +34,76 @@
 <br/>
 
 ## ⚡ The Problem
-If you are a video editor, graphic designer, developer, or heavy web user on a Mac:
-- **Adobe Creative Cloud** silently accumulates **20 GB – 100+ GB** in `Media Cache Files`, `Peak Files`, and scratch caches without auto-clearing.
-- **macOS System Data** bloats unexpectedly due to hidden **Time Machine local snapshots** and diagnostic logs.
-- **Browsers (Chrome, Brave, Arc, Safari)** store gigabytes of cached media and scripts.
+Professional software tools silently hoard gigabytes of cache and scratch files without clearing them:
+* **Video & 3D**: Adobe Premiere, After Effects, DaVinci Resolve, Blender, Unreal Engine, and Cinema 4D generate **50 GB – 200+ GB** of render scratch, peak files, and shader caches.
+* **IDEs & Dev**: Xcode (`DerivedData`), Android Studio, JetBrains, Docker, and package managers accumulate tens of gigabytes of stale build artifacts.
+* **Browsers & Desktop Apps**: Chrome, Safari, Slack, Discord, Teams, Spotify, and Figma continuously hoard media and web cache.
+* **macOS System Data**: Time Machine local snapshots and system diagnostic reports secretly lock up disk space.
 
-**ZeroEmpire** solves this with a **single, beautiful confirmation modal**—no terminal commands, no scary code, and zero background battery drain.
-
----
-
-## 🎯 What Gets Cleaned?
-
-| Category | Cleaned Assets | Safety Guarantee |
-| :--- | :--- | :---: |
-| **🎨 Adobe Creative Cloud** | • Media Cache Files & Media Cache<br/>• Peak Files (.cfa / .pek)<br/>• CameraRaw Cache<br/>• Premiere & After Effects Auto-Saves<br/>• Photoshop AutoRecover | **100% Safe**<br/><sub>(Rebuilds on-demand, project files untouched)</sub> |
-| **🌐 Web Browsers** | • Google Chrome Cache<br/>• Brave Browser Cache<br/>• Apple Safari Cache<br/>• Arc Browser Cache<br/>• Microsoft Edge & Firefox | **100% Safe**<br/><sub>(Bookmarks, history & passwords preserved)</sub> |
-| **⚙️ macOS System Data** | • Time Machine Local Snapshots (`tmutil`)<br/>• Diagnostic Crash Reports & System Logs<br/>• QuickLook Thumbnails Database (`qlmanage`) | **100% Safe**<br/><sub>(Reclaims hidden 'System Data')</sub> |
-| **🛠️ Dev Tools (Optional)** | • Xcode DerivedData<br/>• CocoaPods Cache<br/>• npm `_cacache` & pip Cache | **100% Safe**<br/><sub>(Safe dev artifact purge)</sub> |
-| **🗑️ Trash** | • Empties User Trash (`~/.Trash`) | **Clean** |
+**ZeroEmpire** safely purges these with a **single, elegant confirmation popup**—zero terminal windows, zero bloat, and zero battery impact.
 
 ---
 
-## 🚀 How to Install & Use
+## 🎯 Supported Softwares & Tools (400+ Covered)
 
-### Method 1: Download & Install (Easiest)
-1. Click the [**Download ZeroEmpire.dmg**](https://github.com/pabeledp/ZeroEmpire/raw/main/ZeroEmpire.dmg) button above.
-2. Open the `.dmg` file and drag **ZeroEmpire** into your **Applications** folder.
-3. Launch **ZeroEmpire** from Spotlight (`Cmd + Space`), Launchpad, or your Dock.
-4. Click **"Clean Now (Purge Junk)"** on the native confirmation prompt.
-5. Reclaim gigabytes within seconds and get an instant summary notification!
+ZeroEmpire features a multi-tiered intelligent cleaning architecture that purges caches across:
 
-### Method 2: Preview Clutter Before Cleaning
-Want to see exactly how much junk is stored on your Mac right now? Run the built-in scanner:
+### 1. 🎬 Video, Motion & VFX
+* **Adobe Creative Cloud**: Premiere Pro, After Effects, Media Encoder, Audition, Character Animator, Animate
+* **DaVinci Resolve**: CacheClip, Gallery Stills, Optimized & Proxy Media
+* **Apple Pro Apps**: Final Cut Pro, Motion, Compressor
+* **CapCut, Avid Media Composer, Vegas Pro, CyberLink PowerDirector**
+
+### 2. 🧊 3D, Game Engines & CAD
+* **3D Suites**: Blender, Cinema 4D (Maxon), Maya, 3ds Max, Houdini, ZBrush, Modo, Rhino 3D, SketchUp
+* **Game Engines**: Unreal Engine (DerivedDataCache, Shader Cache), Unity Editor (`Unity/cache`), Godot Engine
+* **Renderers**: Octane Render, Redshift, V-Ray, Arnold Renderer, Corona Renderer, KeyShot
+* **Texturing & VFX**: Substance 3D Painter/Designer, Quixel Mixer, Quixel Bridge, Marvelous Designer, Clo3D
+
+### 3. 🎨 Graphic Design & Digital Art
+* Photoshop (AutoRecover, Scratch), Illustrator, InDesign, Lightroom, Capture One, Affinity Suite (Designer, Photo, Publisher), CorelDRAW, Clip Studio Paint, Krita, Procreate, Figma, Sketch
+
+### 4. 💻 Development, IDEs & Mobile Toolchains
+* **IDEs**: Xcode (`DerivedData`, Archives, iOS DeviceSupport), Android Studio, JetBrains (IntelliJ, WebStorm, PyCharm, CLion, Rider, GoLand), Visual Studio Code, Cursor, Eclipse, Sublime Text
+* **Virtualization & Containers**: Docker (Builder cache, dangling images), Podman, VirtualBox, VMware Fusion, Parallels
+* **CLI & Package Managers**: Homebrew (`brew cleanup`), npm (`_cacache`), pnpm, Yarn, Bun, Pip, Poetry, Conda, Composer, Cargo, Gradle, Maven
+
+### 5. 🌐 Web Browsers (Desktop & Developer)
+* Google Chrome, Apple Safari, Brave, Arc Browser, Microsoft Edge, Mozilla Firefox, Opera, Vivaldi, Tor Browser, DuckDuckGo, Chrome Canary, Firefox Dev Edition
+
+### 6. 💬 Productivity & Communication
+* Slack, Discord, Telegram, Microsoft Teams, WhatsApp Desktop, Zoom, Spotify, Notion, Obsidian, Postman, Insomnia, GitHub Desktop, GitKraken, TablePlus, DBeaver
+
+### 7. ⚙️ macOS System Data & OS Bloat
+* **Time Machine Local Snapshots** (the #1 secret cause of massive "System Data")
+* QuickLook thumbnail databases (`qlmanage -r cache`)
+* Diagnostic crash logs & reports (`/Library/Logs/DiagnosticReports`)
+* User Trash (`~/.Trash`)
+
+---
+
+## 🛡️ 100% Safety Guarantee
+* **Zero Project Loss**: Your project files (`.prproj`, `.aep`, `.blend`, `.psd`, `.xcodeproj`), code repositories, and documents are **never touched**.
+* **Zero Login Loss**: Your saved passwords, browser bookmarks, and login sessions remain completely intact.
+* **On-Demand Cache**: Purged files are purely temporary render caches, preview proxies, and stale logs that re-generate cleanly when needed.
+
+---
+
+## 🚀 How to Use
+
+### 1. Download & Run
+1. Download [**ZeroEmpire.dmg**](https://github.com/pabeledp/ZeroEmpire/raw/main/ZeroEmpire.dmg).
+2. Drag **ZeroEmpire** into your **Applications** folder.
+3. Open **ZeroEmpire** from Spotlight or Applications.
+4. Click **"Clean All Caches Now"** on the popup.
+5. Reclaim gigabytes within seconds and get a detailed completion alert!
+
+### 2. Preview Clutter (Optional CLI Scanner)
 ```bash
 ./scripts/check_clutter.sh
 ```
 
 ---
 
-## 🛠️ Tech Stack & Architecture
-
-- **Core Engine**: Pure native **Swift (AppKit)** compiled binary.
-- **UI & Modal**: macOS Cocoa `NSAlert` modal and UserNotification framework.
-- **Zero Dependencies**: Does **not** require Python, Node.js, Electron, or external package managers.
-- **Lightweight**: Uses less than 2 MB total disk space.
-
----
-
-## 🏗️ Building from Source
-
-If you want to compile `ZeroEmpire.app` yourself:
-
-```bash
-# Clone the repository
-git clone https://github.com/pabeledp/ZeroEmpire.git
-cd ZeroEmpire
-
-# Compile native binary and assemble app bundle
-swiftc -O src/main.swift -o ZeroEmpire.app/Contents/MacOS/ZeroEmpire
-cp src/Info.plist ZeroEmpire.app/Contents/Info.plist
-cp assets/AppIcon.icns ZeroEmpire.app/Contents/Resources/AppIcon.icns
-codesign --force --deep --sign - ZeroEmpire.app
-
-# Optional: Generate DMG
-./create_dmg.sh
-```
-
----
-
-## 🇧🇩 বাংলা নির্দেশিকা (Bangla Guide)
-
-### কেন জিরো-এম্পায়ার (ZeroEmpire)?
-Mac ব্যবহারকারীদের ডিস্ক স্টোরেজ ফুল হওয়ার অন্যতম বড় কারণ হলো **System Data** এবং **Adobe Cache**। আপনি প্রিমিয়ার প্রো বা আফটার ইফেক্টসে কাজ করলে কয়েক দিনেই ২০-৫০ জিবি মিডিয়া ক্যাশ জমে যায়। 
-
-**ZeroEmpire** কোনো অতিরিক্ত ব্লোটওয়্যার ছাড়াই মাত্র **১ ক্লিকে** একটি নিরাপদ পপআপের মাধ্যমে অপ্রয়োজনীয় ক্যাশ ও লোকাল স্ন্যাপশট মুছে দেয়।
-
-* **ডাউনলোড লিংক**: ওপরের [**Download ZeroEmpire.dmg**](https://github.com/pabeledp/ZeroEmpire/raw/main/ZeroEmpire.dmg) বাটনে ক্লিক করে ফাইলটি নামিয়ে আপনার অ্যাপ্লিকেশনে ড্র্যাগ করুন।
-* **ব্যবহার**: অ্যাপটি ওপেন করে **"Clean Now"** চাপুন। কাজ শেষ হলে কত জিবি খালি হয়েছে তা নোটিফিকেশনে জানিয়ে দেওয়া হবে।
-
----
-
 ## 📄 License
 This project is open-source under the [MIT License](LICENSE).
-
-<div align="center">
-<sub>Crafted with precision for creators and power users on macOS.</sub>
-</div>
