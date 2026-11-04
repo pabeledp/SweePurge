@@ -107,3 +107,9 @@ ZeroEmpire features a multi-tiered intelligent cleaning architecture that purges
 
 ## 📄 License
 This project is open-source under the [MIT License](LICENSE).
+
+<br/>
+
+<div align="center">
+  <span style="opacity: 0.35; font-size: 11px; color: #888888;">Crafted by A M Pabel, Team Captain at FramEmpire</span>
+</div>

@@ -33,6 +33,13 @@ class ZeroEmpireApp: NSObject, NSApplicationDelegate {
             alert.icon = icon
         }
         
+        // Subtle, low-transparency developer credit at the bottom
+        let creditLabel = NSTextField(labelWithString: "Crafted by A M Pabel, Team Captain at FramEmpire")
+        creditLabel.font = NSFont.systemFont(ofSize: 10)
+        creditLabel.textColor = NSColor.secondaryLabelColor.withAlphaComponent(0.45)
+        creditLabel.alignment = .left
+        alert.accessoryView = creditLabel
+        
         alert.addButton(withTitle: "Clean All Caches Now")
         alert.addButton(withTitle: "Cancel")
         
@@ -74,6 +81,13 @@ class ZeroEmpireApp: NSObject, NSApplicationDelegate {
         if let icon = appIcon {
             successAlert.icon = icon
         }
+        
+        let successCredit = NSTextField(labelWithString: "Crafted by A M Pabel, Team Captain at FramEmpire")
+        successCredit.font = NSFont.systemFont(ofSize: 10)
+        successCredit.textColor = NSColor.secondaryLabelColor.withAlphaComponent(0.45)
+        successCredit.alignment = .left
+        successAlert.accessoryView = successCredit
+        
         successAlert.addButton(withTitle: "Awesome")
         successAlert.runModal()
         
@@ -105,17 +119,11 @@ class ZeroEmpireApp: NSObject, NSApplicationDelegate {
     func performUniversalCleanup(homeDir: String) {
         let fm = FileManager.default
         
-        // ==========================================
         // 1. TIER 1: GLOBAL USER CACHE DIRECTORY
-        // (Covers ALL 400+ Mac applications storing in ~/Library/Caches)
-        // ==========================================
         cleanDirectoryContents("\(homeDir)/Library/Caches")
         cleanDirectoryContents("/Library/Caches")
         
-        // ==========================================
         // 2. TIER 2: ELECTRON & PRODUCTIVITY APPS
-        // (VS Code, Cursor, Slack, Discord, Notion, Figma, Spotify, WhatsApp, Teams, Postman, etc.)
-        // ==========================================
         let appSupportDir = "\(homeDir)/Library/Application Support"
         if let apps = try? fm.contentsOfDirectory(atPath: appSupportDir) {
             let cacheFolderNames = [
@@ -132,10 +140,7 @@ class ZeroEmpireApp: NSObject, NSApplicationDelegate {
             }
         }
         
-        // ==========================================
         // 3. TIER 3: PRO VIDEO, 3D & AUDIO CREATIVE SUITES
-        // ==========================================
-        // Adobe Suite
         let adobePaths = [
             "\(homeDir)/Library/Application Support/Adobe/Common/Media Cache Files",
             "\(homeDir)/Library/Application Support/Adobe/Common/Media Cache",
@@ -150,12 +155,12 @@ class ZeroEmpireApp: NSObject, NSApplicationDelegate {
         cleanWildcardSubfolders(base: "\(homeDir)/Documents/Adobe/Premiere Pro", childPattern: "Adobe Premiere Pro Auto-Save")
         cleanWildcardSubfolders(base: "\(homeDir)/Documents/Adobe/After Effects", childPattern: "Adobe After Effects Auto-Save")
         
-        // DaVinci Resolve (Blackmagic Design)
+        // DaVinci Resolve
         cleanDirectoryContents("\(homeDir)/Library/Application Support/Blackmagic Design/DaVinci Resolve/CacheClip")
         cleanDirectoryContents("\(homeDir)/Library/Application Support/Blackmagic Design/DaVinci Resolve/.gallery")
         cleanDirectoryContents("\(homeDir)/Library/Application Support/Blackmagic Design/DaVinci Resolve/ProxyMedia")
         
-        // Final Cut Pro & Motion
+        // Final Cut Pro
         cleanDirectoryContents("\(homeDir)/Movies/Motion Templates.localized/Cache")
         
         // Blender
@@ -165,43 +170,33 @@ class ZeroEmpireApp: NSObject, NSApplicationDelegate {
         // Cinema 4D / Maxon
         cleanWildcardSubfolders(base: "\(homeDir)/Library/Application Support/Maxon", childPattern: "cache")
         
-        // Unreal Engine & Epic Games
+        // Unreal Engine & Unity
         cleanDirectoryContents("\(homeDir)/Library/Caches/com.epicgames.UnrealEngine")
         cleanDirectoryContents("\(homeDir)/Library/Application Support/Epic/UnrealEngine/Common/DerivedDataCache")
         cleanDirectoryContents("\(homeDir)/Library/Application Support/Epic/EpicGamesLauncher/Saved/Logs")
-        
-        // Unity Editor
         cleanDirectoryContents("\(homeDir)/Library/Unity/cache")
         cleanDirectoryContents("\(homeDir)/Library/Caches/com.unity3d.UnityEditor")
         
-        // Audio DAWs (Logic, Ableton, FL Studio, Pro Tools)
+        // Audio DAWs
         cleanDirectoryContents("\(homeDir)/Library/Caches/AudioUnitCache")
         cleanDirectoryContents("\(homeDir)/Library/Application Support/Ableton/Live Database/Cache")
         cleanDirectoryContents("\(homeDir)/Music/Audio Music Apps/Freeze Files")
         
-        // ==========================================
         // 4. TIER 4: DEVELOPER & BUILD TOOLCHAINS
-        // ==========================================
         let devCaches = [
-            // Xcode & iOS
             "\(homeDir)/Library/Developer/Xcode/DerivedData",
             "\(homeDir)/Library/Developer/Xcode/Archives",
             "\(homeDir)/Library/Developer/Xcode/iOS DeviceSupport",
             "\(homeDir)/Library/Developer/CoreSimulator/Caches",
-            // Android Studio & Gradle
             "\(homeDir)/.gradle/caches",
             "\(homeDir)/.android/build-cache",
             "\(homeDir)/.android/cache",
-            // JetBrains IDEs
             "\(homeDir)/Library/Caches/JetBrains",
-            // VS Code / Cursor Caches
             "\(homeDir)/Library/Application Support/Code/Cache",
             "\(homeDir)/Library/Application Support/Code/CachedData",
             "\(homeDir)/Library/Application Support/Cursor/Cache",
             "\(homeDir)/Library/Application Support/Cursor/CachedData",
-            // Universal XDG Cache directory (used by 100+ CLI tools)
             "\(homeDir)/.cache",
-            // Package Managers
             "\(homeDir)/.npm/_cacache",
             "\(homeDir)/.pnpm-store",
             "\(homeDir)/Library/Caches/Yarn",
@@ -215,17 +210,12 @@ class ZeroEmpireApp: NSObject, NSApplicationDelegate {
         ]
         for p in devCaches { cleanDirectoryContents(p) }
         
-        // Clean Homebrew cache via CLI if installed
         runProcess(path: "/usr/local/bin/brew", args: ["cleanup", "-s"])
         runProcess(path: "/opt/homebrew/bin/brew", args: ["cleanup", "-s"])
-        
-        // Docker pruning (dangling builder & containers) if docker CLI available
         runProcess(path: "/usr/local/bin/docker", args: ["builder", "prune", "-f"])
         runProcess(path: "/opt/homebrew/bin/docker", args: ["builder", "prune", "-f"])
         
-        // ==========================================
         // 5. TIER 5: SYSTEM DATA, LOGS & SNAPSHOTS
-        // ==========================================
         cleanDirectoryContents("\(homeDir)/Library/Logs")
         cleanDirectoryContents("/Library/Logs")
         cleanDirectoryContents("\(homeDir)/Library/Logs/DiagnosticReports")
@@ -233,10 +223,8 @@ class ZeroEmpireApp: NSObject, NSApplicationDelegate {
         cleanDirectoryContents("\(homeDir)/Library/Application Support/CrashReporter")
         cleanDirectoryContents("\(homeDir)/.Trash")
         
-        // Time Machine Local Snapshots (Crucial for Mac 'System Data')
         purgeTimeMachineLocalSnapshots()
         
-        // QuickLook Thumbnail Database Refresh
         runProcess(path: "/usr/bin/qlmanage", args: ["-r", "cache"])
         runProcess(path: "/usr/bin/qlmanage", args: ["-r"])
     }
