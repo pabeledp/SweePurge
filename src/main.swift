@@ -12,33 +12,23 @@ class ZeroEmpireApp: NSObject, NSApplicationDelegate {
         let homeDir = FileManager.default.homeDirectoryForCurrentUser.path
         let appIcon = NSImage(contentsOfFile: Bundle.main.path(forResource: "AppIcon", ofType: "icns") ?? "") ?? NSApp.applicationIconImage
         
-        // 1. Show Confirmation Dialog
+        // 1. Show Clean, Premium Confirmation Dialog
         let alert = NSAlert()
-        alert.messageText = "ZeroEmpire: Universal System & App Cache Purger"
+        alert.messageText = "ZeroEmpire Storage Purger"
         alert.informativeText = """
-        Do you want to clean unnecessary caches and reclaim disk space?
+        Ready to optimize your Mac and reclaim disk space?
 
-        ZeroEmpire Universal Engine purges cache for 400+ apps & tools:
-        • Video & 3D: Adobe, DaVinci Resolve, Final Cut Pro, Blender, Cinema 4D, Unreal, Unity
-        • Development: Xcode DerivedData, Android Studio, JetBrains, VS Code, Cursor, Docker
-        • Browsers: Chrome, Safari, Brave, Edge, Arc, Firefox, Opera, Vivaldi, Tor
-        • Communication & Tools: Slack, Discord, Telegram, Teams, WhatsApp, Spotify, Figma, Notion
-        • Package Managers: Homebrew, npm, pnpm, yarn, bun, pip, cargo, gradle, maven
-        • System Data: Time Machine local snapshots, logs, diagnostic reports, QuickLook & Trash
+        Safely purges temporary caches, render scratch files, and system data bloat across 400+ creative apps, browsers, and developer tools.
 
-        Your project files, saved documents, bookmarks, login credentials, and code remain 100% safe.
+        ✓ 100% Safe: Personal files, active projects, and login sessions remain untouched.
         """
         alert.alertStyle = .informational
         if let icon = appIcon {
             alert.icon = icon
         }
         
-        // Subtle, low-transparency developer credit at the bottom
-        let creditLabel = NSTextField(labelWithString: "Crafted by A M Pabel, Team Captain at FramEmpire")
-        creditLabel.font = NSFont.systemFont(ofSize: 10)
-        creditLabel.textColor = NSColor.secondaryLabelColor.withAlphaComponent(0.45)
-        creditLabel.alignment = .left
-        alert.accessoryView = creditLabel
+        // Subtle, low-transparency developer credit at the bottom of the popup
+        alert.accessoryView = createSubtleCreditView(width: 320)
         
         alert.addButton(withTitle: "Clean All Caches Now")
         alert.addButton(withTitle: "Cancel")
@@ -62,36 +52,45 @@ class ZeroEmpireApp: NSObject, NSApplicationDelegate {
         
         // 5. Native Notification
         sendNotification(
-            title: "ZeroEmpire: All Caches Purged!",
+            title: "ZeroEmpire: Mac Optimized!",
             message: "Reclaimed \(reclaimedFormatted) across 400+ apps & system storage."
         )
         
-        // 6. Success Modal
+        // 6. Clean Success Modal
         let successAlert = NSAlert()
-        successAlert.messageText = "🎉 Optimization Complete!"
+        successAlert.messageText = "🎉 Mac Optimized!"
         successAlert.informativeText = """
-        ZeroEmpire has successfully cleaned your Mac.
+        ZeroEmpire has successfully cleaned your system.
 
         • Storage Reclaimed: \(reclaimedFormatted)
-        • Total Free Disk Space: \(formatBytes(freeAfter))
+        • Total Available Space: \(formatBytes(freeAfter))
 
-        Caches for Adobe, DaVinci, Blender, Xcode, Browsers, Electron apps, Dev toolchains, and macOS System Data have been purged.
+        Temporary caches, render scratch, and system snapshots have been safely purged.
         """
         successAlert.alertStyle = .informational
         if let icon = appIcon {
             successAlert.icon = icon
         }
-        
-        let successCredit = NSTextField(labelWithString: "Crafted by A M Pabel, Team Captain at FramEmpire")
-        successCredit.font = NSFont.systemFont(ofSize: 10)
-        successCredit.textColor = NSColor.secondaryLabelColor.withAlphaComponent(0.45)
-        successCredit.alignment = .left
-        successAlert.accessoryView = successCredit
-        
-        successAlert.addButton(withTitle: "Awesome")
+        successAlert.accessoryView = createSubtleCreditView(width: 320)
+        successAlert.addButton(withTitle: "Done")
         successAlert.runModal()
         
         exit(0)
+    }
+    
+    func createSubtleCreditView(width: CGFloat) -> NSView {
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: width, height: 22))
+        let label = NSTextField(frame: NSRect(x: 0, y: 4, width: width, height: 16))
+        label.stringValue = "Crafted by A M Pabel, Team Captain at FramEmpire"
+        label.isBezeled = false
+        label.drawsBackground = false
+        label.isEditable = false
+        label.isSelectable = false
+        label.font = NSFont.systemFont(ofSize: 9.5, weight: .regular)
+        label.textColor = NSColor.secondaryLabelColor.withAlphaComponent(0.35)
+        label.alignment = .left
+        container.addSubview(label)
+        return container
     }
     
     func getFreeDiskSpaceBytes() -> Int64 {
