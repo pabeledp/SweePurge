@@ -111,5 +111,8 @@ This project is open-source under the [MIT License](LICENSE).
 <br/>
 
 <div align="center">
-  <span style="opacity: 0.35; font-size: 11px; color: #888888;">Crafted by A M Pabel, Team Captain at FramEmpire</span>
+  <p style="opacity: 0.35; font-size: 10px; color: #888888; line-height: 1.5; margin-top: 30px;">
+    Developed by<br/>
+    A M Pabel, Team Captain at FramEmpire
+  </p>
 </div>

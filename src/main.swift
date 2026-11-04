@@ -27,8 +27,8 @@ class ZeroEmpireApp: NSObject, NSApplicationDelegate {
             alert.icon = icon
         }
         
-        // Subtle, low-transparency developer credit at the bottom of the popup
-        alert.accessoryView = createSubtleCreditView(width: 320)
+        // Center-aligned, 2-line subtle developer credit
+        alert.accessoryView = createSubtleCreditView(width: 300)
         
         alert.addButton(withTitle: "Clean All Caches Now")
         alert.addButton(withTitle: "Cancel")
@@ -71,7 +71,7 @@ class ZeroEmpireApp: NSObject, NSApplicationDelegate {
         if let icon = appIcon {
             successAlert.icon = icon
         }
-        successAlert.accessoryView = createSubtleCreditView(width: 320)
+        successAlert.accessoryView = createSubtleCreditView(width: 300)
         successAlert.addButton(withTitle: "Done")
         successAlert.runModal()
         
@@ -79,17 +79,32 @@ class ZeroEmpireApp: NSObject, NSApplicationDelegate {
     }
     
     func createSubtleCreditView(width: CGFloat) -> NSView {
-        let container = NSView(frame: NSRect(x: 0, y: 0, width: width, height: 22))
-        let label = NSTextField(frame: NSRect(x: 0, y: 4, width: width, height: 16))
-        label.stringValue = "Crafted by A M Pabel, Team Captain at FramEmpire"
-        label.isBezeled = false
-        label.drawsBackground = false
-        label.isEditable = false
-        label.isSelectable = false
-        label.font = NSFont.systemFont(ofSize: 9.5, weight: .regular)
-        label.textColor = NSColor.secondaryLabelColor.withAlphaComponent(0.35)
-        label.alignment = .left
-        container.addSubview(label)
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: width, height: 34))
+        
+        // Line 1: Developed by (smaller, centered)
+        let line1 = NSTextField(frame: NSRect(x: 0, y: 17, width: width, height: 14))
+        line1.stringValue = "Developed by"
+        line1.isBezeled = false
+        line1.drawsBackground = false
+        line1.isEditable = false
+        line1.isSelectable = false
+        line1.font = NSFont.systemFont(ofSize: 8.5, weight: .regular)
+        line1.textColor = NSColor.secondaryLabelColor.withAlphaComponent(0.35)
+        line1.alignment = .center
+        
+        // Line 2: Name & Designation (centered)
+        let line2 = NSTextField(frame: NSRect(x: 0, y: 0, width: width, height: 16))
+        line2.stringValue = "A M Pabel, Team Captain at FramEmpire"
+        line2.isBezeled = false
+        line2.drawsBackground = false
+        line2.isEditable = false
+        line2.isSelectable = false
+        line2.font = NSFont.systemFont(ofSize: 9.5, weight: .regular)
+        line2.textColor = NSColor.secondaryLabelColor.withAlphaComponent(0.40)
+        line2.alignment = .center
+        
+        container.addSubview(line1)
+        container.addSubview(line2)
         return container
     }
     
