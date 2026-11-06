@@ -275,39 +275,55 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
         subtitleLabel.stringValue = "Optimizing Mac Storage..."
         
         let width = window.frame.width
-        let spinner = NSProgressIndicator(frame: NSRect(x: (width - 32) / 2, y: 220, width: 32, height: 32))
+        let spinner = NSProgressIndicator(frame: NSRect(x: (width - 32) / 2, y: 224, width: 32, height: 32))
         spinner.style = .spinning
         spinner.controlSize = .regular
         spinner.isIndeterminate = true
         spinner.startAnimation(nil)
         visualEffect.addSubview(spinner)
         
-        let progressLabel = NSTextField(frame: NSRect(x: 20, y: 170, width: width - 40, height: 22))
-        progressLabel.stringValue = "Scanning and purging junk files..."
-        progressLabel.font = NSFont.systemFont(ofSize: 12, weight: .regular)
-        progressLabel.textColor = NSColor.secondaryLabelColor
-        progressLabel.alignment = .center
-        progressLabel.isBezeled = false
-        progressLabel.drawsBackground = false
-        progressLabel.isEditable = false
-        progressLabel.isSelectable = false
-        visualEffect.addSubview(progressLabel)
+        let stageLabel = NSTextField(frame: NSRect(x: 20, y: 182, width: width - 40, height: 22))
+        stageLabel.stringValue = "Initializing storage purger..."
+        stageLabel.font = NSFont.systemFont(ofSize: 13, weight: .medium)
+        stageLabel.textColor = NSColor.labelColor
+        stageLabel.alignment = .center
+        stageLabel.isBezeled = false
+        stageLabel.drawsBackground = false
+        stageLabel.isEditable = false
+        stageLabel.isSelectable = false
+        visualEffect.addSubview(stageLabel)
+        
+        let pathLabel = NSTextField(frame: NSRect(x: 24, y: 156, width: width - 48, height: 18))
+        pathLabel.stringValue = "Scanning file system..."
+        pathLabel.font = NSFont.monospacedSystemFont(ofSize: 10.5, weight: .regular)
+        pathLabel.textColor = NSColor.secondaryLabelColor.withAlphaComponent(0.45)
+        pathLabel.alignment = .center
+        pathLabel.cell?.lineBreakMode = .byTruncatingMiddle
+        pathLabel.isBezeled = false
+        pathLabel.drawsBackground = false
+        pathLabel.isEditable = false
+        pathLabel.isSelectable = false
+        visualEffect.addSubview(pathLabel)
         
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self = self else { return }
             SweePurgeEngine.run(
                 homeDir: self.homeDir,
                 appIcon: self.appIcon,
-                progressUpdate: { status in
+                progressUpdate: { stage, path in
                     DispatchQueue.main.async {
-                        progressLabel.stringValue = status
+                        stageLabel.stringValue = stage
+                        if !path.isEmpty {
+                            pathLabel.stringValue = path
+                        }
                     }
                 },
                 completion: { reclaimed, freeTotal in
                     DispatchQueue.main.async {
                         spinner.stopAnimation(nil)
                         spinner.removeFromSuperview()
-                        progressLabel.removeFromSuperview()
+                        stageLabel.removeFromSuperview()
+                        pathLabel.removeFromSuperview()
                         self.showCompletionUI(reclaimed: reclaimed, freeTotal: freeTotal)
                     }
                 }
@@ -360,10 +376,45 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
 }
 
 class SweePurgeEngine {
-    static func run(homeDir: String, appIcon: NSImage?, progressUpdate: @escaping (String) -> Void, completion: @escaping (String, String) -> Void) {
-        let freeBefore = getFreeDiskSpaceBytes()
+    class ProgressReporter {
+        let callback: (String, String) -> Void
+        var currentStage: String = ""
+        private var lastReportTime: TimeInterval = 0
+        private let throttleInterval: TimeInterval = 0.05 // 50ms throttle for 60fps responsiveness
+        private let homeDir: String
         
-        performDeepUniversalCleanup(homeDir: homeDir, progress: progressUpdate)
+        init(homeDir: String, callback: @escaping (String, String) -> Void) {
+            self.homeDir = homeDir
+            self.callback = callback
+        }
+        
+        func setStage(_ stage: String) {
+            self.currentStage = stage
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                self.callback(self.currentStage, "")
+            }
+        }
+        
+        func reportPath(_ fullPath: String) {
+            let now = Date().timeIntervalSince1970
+            guard now - lastReportTime >= throttleInterval else { return }
+            lastReportTime = now
+            
+            let displayPath = fullPath.replacingOccurrences(of: homeDir, with: "~")
+            let stage = self.currentStage
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                self.callback(stage, displayPath)
+            }
+        }
+    }
+    
+    static func run(homeDir: String, appIcon: NSImage?, progressUpdate: @escaping (String, String) -> Void, completion: @escaping (String, String) -> Void) {
+        let freeBefore = getFreeDiskSpaceBytes()
+        let reporter = ProgressReporter(homeDir: homeDir, callback: progressUpdate)
+        
+        performDeepUniversalCleanup(homeDir: homeDir, reporter: reporter)
         
         let freeAfter = getFreeDiskSpaceBytes()
         let reclaimedBytes = max(0, freeAfter - freeBefore)
@@ -400,16 +451,16 @@ class SweePurgeEngine {
         return formatter.string(fromByteCount: bytes)
     }
     
-    static func performDeepUniversalCleanup(homeDir: String, progress: @escaping (String) -> Void) {
+    static func performDeepUniversalCleanup(homeDir: String, reporter: ProgressReporter) {
         let fm = FileManager.default
         
         // 1. TIER 1: GLOBAL USER & SYSTEM CACHES
-        progress("Purging 400+ Apps Caches & Storage...")
-        cleanDirectoryContents("\(homeDir)/Library/Caches")
-        cleanDirectoryContents("/Library/Caches")
+        reporter.setStage("Purging 400+ Apps Caches & Storage...")
+        cleanDirectoryContents("\(homeDir)/Library/Caches", reporter: reporter)
+        cleanDirectoryContents("/Library/Caches", reporter: reporter)
         
         // 2. TIER 2: ELECTRON & DESKTOP APPS
-        progress("Cleaning Application Support & App Caches...")
+        reporter.setStage("Cleaning Application Support & App Caches...")
         let appSupportDir = "\(homeDir)/Library/Application Support"
         if let apps = try? fm.contentsOfDirectory(atPath: appSupportDir) {
             let cacheFolderNames = [
@@ -421,13 +472,13 @@ class SweePurgeEngine {
                 let appPath = (appSupportDir as NSString).appendingPathComponent(app)
                 for cName in cacheFolderNames {
                     let target = (appPath as NSString).appendingPathComponent(cName)
-                    cleanDirectoryContents(target)
+                    cleanDirectoryContents(target, reporter: reporter)
                 }
             }
         }
         
         // 3. TIER 3: PRO VIDEO, 3D & AUDIO CREATIVE SUITES
-        progress("Purging Adobe Media Caches & Scratch Disks...")
+        reporter.setStage("Purging Adobe Media Caches & Scratch Disks...")
         let adobePaths = [
             "\(homeDir)/Library/Application Support/Adobe/Common/Media Cache Files",
             "\(homeDir)/Library/Application Support/Adobe/Common/Media Cache",
@@ -437,31 +488,31 @@ class SweePurgeEngine {
             "\(homeDir)/Library/Logs/Adobe",
             "\(homeDir)/Library/Application Support/Adobe/CRLogs"
         ]
-        for p in adobePaths { cleanDirectoryContents(p) }
-        cleanWildcardSubfolders(base: "\(homeDir)/Library/Application Support/Adobe", childPattern: "AutoRecover")
-        cleanWildcardSubfolders(base: "\(homeDir)/Documents/Adobe/Premiere Pro", childPattern: "Adobe Premiere Pro Auto-Save")
-        cleanWildcardSubfolders(base: "\(homeDir)/Documents/Adobe/After Effects", childPattern: "Adobe After Effects Auto-Save")
+        for p in adobePaths { cleanDirectoryContents(p, reporter: reporter) }
+        cleanWildcardSubfolders(base: "\(homeDir)/Library/Application Support/Adobe", childPattern: "AutoRecover", reporter: reporter)
+        cleanWildcardSubfolders(base: "\(homeDir)/Documents/Adobe/Premiere Pro", childPattern: "Adobe Premiere Pro Auto-Save", reporter: reporter)
+        cleanWildcardSubfolders(base: "\(homeDir)/Documents/Adobe/After Effects", childPattern: "Adobe After Effects Auto-Save", reporter: reporter)
         
         // DaVinci Resolve & 3D Suites
-        progress("Cleaning 3D, Video & DAW Render Caches...")
-        cleanDirectoryContents("\(homeDir)/Library/Application Support/Blackmagic Design/DaVinci Resolve/CacheClip")
-        cleanDirectoryContents("\(homeDir)/Library/Application Support/Blackmagic Design/DaVinci Resolve/.gallery")
-        cleanDirectoryContents("\(homeDir)/Library/Application Support/Blackmagic Design/DaVinci Resolve/ProxyMedia")
-        cleanDirectoryContents("\(homeDir)/Movies/Motion Templates.localized/Cache")
-        cleanWildcardSubfolders(base: "\(homeDir)/Library/Application Support/Blender", childPattern: "cache")
-        cleanDirectoryContents("\(homeDir)/.config/blender/cache")
-        cleanWildcardSubfolders(base: "\(homeDir)/Library/Application Support/Maxon", childPattern: "cache")
-        cleanDirectoryContents("\(homeDir)/Library/Caches/com.epicgames.UnrealEngine")
-        cleanDirectoryContents("\(homeDir)/Library/Application Support/Epic/UnrealEngine/Common/DerivedDataCache")
-        cleanDirectoryContents("\(homeDir)/Library/Application Support/Epic/EpicGamesLauncher/Saved/Logs")
-        cleanDirectoryContents("\(homeDir)/Library/Unity/cache")
-        cleanDirectoryContents("\(homeDir)/Library/Caches/com.unity3d.UnityEditor")
-        cleanDirectoryContents("\(homeDir)/Library/Caches/AudioUnitCache")
-        cleanDirectoryContents("\(homeDir)/Library/Application Support/Ableton/Live Database/Cache")
-        cleanDirectoryContents("\(homeDir)/Music/Audio Music Apps/Freeze Files")
+        reporter.setStage("Cleaning 3D, Video & DAW Render Caches...")
+        cleanDirectoryContents("\(homeDir)/Library/Application Support/Blackmagic Design/DaVinci Resolve/CacheClip", reporter: reporter)
+        cleanDirectoryContents("\(homeDir)/Library/Application Support/Blackmagic Design/DaVinci Resolve/.gallery", reporter: reporter)
+        cleanDirectoryContents("\(homeDir)/Library/Application Support/Blackmagic Design/DaVinci Resolve/ProxyMedia", reporter: reporter)
+        cleanDirectoryContents("\(homeDir)/Movies/Motion Templates.localized/Cache", reporter: reporter)
+        cleanWildcardSubfolders(base: "\(homeDir)/Library/Application Support/Blender", childPattern: "cache", reporter: reporter)
+        cleanDirectoryContents("\(homeDir)/.config/blender/cache", reporter: reporter)
+        cleanWildcardSubfolders(base: "\(homeDir)/Library/Application Support/Maxon", childPattern: "cache", reporter: reporter)
+        cleanDirectoryContents("\(homeDir)/Library/Caches/com.epicgames.UnrealEngine", reporter: reporter)
+        cleanDirectoryContents("\(homeDir)/Library/Application Support/Epic/UnrealEngine/Common/DerivedDataCache", reporter: reporter)
+        cleanDirectoryContents("\(homeDir)/Library/Application Support/Epic/EpicGamesLauncher/Saved/Logs", reporter: reporter)
+        cleanDirectoryContents("\(homeDir)/Library/Unity/cache", reporter: reporter)
+        cleanDirectoryContents("\(homeDir)/Library/Caches/com.unity3d.UnityEditor", reporter: reporter)
+        cleanDirectoryContents("\(homeDir)/Library/Caches/AudioUnitCache", reporter: reporter)
+        cleanDirectoryContents("\(homeDir)/Library/Application Support/Ableton/Live Database/Cache", reporter: reporter)
+        cleanDirectoryContents("\(homeDir)/Music/Audio Music Apps/Freeze Files", reporter: reporter)
         
         // 4. TIER 4: DEVELOPER & BUILD TOOLCHAINS
-        progress("Cleaning Developer Toolchains & Build Artifacts...")
+        reporter.setStage("Cleaning Developer Toolchains & Build Artifacts...")
         let devCaches = [
             "\(homeDir)/Library/Developer/Xcode/DerivedData",
             "\(homeDir)/Library/Developer/Xcode/Archives",
@@ -487,23 +538,26 @@ class SweePurgeEngine {
             "\(homeDir)/.rustup/downloads",
             "\(homeDir)/.m2/repository/.cache"
         ]
-        for p in devCaches { cleanDirectoryContents(p) }
+        for p in devCaches { cleanDirectoryContents(p, reporter: reporter) }
         
+        reporter.reportPath("/opt/homebrew")
         runProcess(path: "/usr/local/bin/brew", args: ["cleanup", "-s"])
         runProcess(path: "/opt/homebrew/bin/brew", args: ["cleanup", "-s"])
         runProcess(path: "/usr/local/bin/docker", args: ["builder", "prune", "-f"])
         runProcess(path: "/opt/homebrew/bin/docker", args: ["builder", "prune", "-f"])
         
         // 5. TIER 5: DEEP JUNK, SAVED STATES & STALE DOWNLOADS
-        progress("Reclaiming Saved States, Logs & Purgeable Space...")
-        cleanDirectoryContents("\(homeDir)/Library/Saved Application State")
-        cleanStaleIncompleteDownloads(in: "\(homeDir)/Downloads")
-        cleanDirectoryContents("\(homeDir)/Library/Logs")
-        cleanDirectoryContents("/Library/Logs")
-        cleanDirectoryContents("\(homeDir)/Library/Logs/DiagnosticReports")
-        cleanDirectoryContents("/Library/Logs/DiagnosticReports")
-        cleanDirectoryContents("\(homeDir)/Library/Application Support/CrashReporter")
-        cleanDirectoryContents("\(homeDir)/.Trash")
+        reporter.setStage("Reclaiming Saved States, Logs & Purgeable Space...")
+        cleanDirectoryContents("\(homeDir)/Library/Saved Application State", reporter: reporter)
+        cleanStaleIncompleteDownloads(in: "\(homeDir)/Downloads", reporter: reporter)
+        cleanDirectoryContents("\(homeDir)/Library/Logs", reporter: reporter)
+        cleanDirectoryContents("/Library/Logs", reporter: reporter)
+        cleanDirectoryContents("\(homeDir)/Library/Logs/DiagnosticReports", reporter: reporter)
+        cleanDirectoryContents("/Library/Logs/DiagnosticReports", reporter: reporter)
+        cleanDirectoryContents("\(homeDir)/Library/Application Support/CrashReporter", reporter: reporter)
+        cleanDirectoryContents("\(homeDir)/.Trash", reporter: reporter)
+        
+        reporter.reportPath("/System/Volumes/Data")
         purgeTimeMachineLocalSnapshots()
         
         runProcess(path: "/usr/bin/qlmanage", args: ["-r", "cache"])
@@ -511,7 +565,7 @@ class SweePurgeEngine {
         runProcess(path: "/usr/bin/atsutil", args: ["databases", "-removeUser"])
     }
     
-    static func cleanDirectoryContents(_ path: String) {
+    static func cleanDirectoryContents(_ path: String, reporter: ProgressReporter? = nil) {
         let fm = FileManager.default
         var isDir: ObjCBool = false
         guard fm.fileExists(atPath: path, isDirectory: &isDir), isDir.boolValue else { return }
@@ -519,11 +573,12 @@ class SweePurgeEngine {
         guard let items = try? fm.contentsOfDirectory(atPath: path) else { return }
         for item in items {
             let itemPath = (path as NSString).appendingPathComponent(item)
+            reporter?.reportPath(itemPath)
             try? fm.removeItem(atPath: itemPath)
         }
     }
     
-    static func cleanWildcardSubfolders(base: String, childPattern: String) {
+    static func cleanWildcardSubfolders(base: String, childPattern: String, reporter: ProgressReporter? = nil) {
         let fm = FileManager.default
         guard let subdirs = try? fm.contentsOfDirectory(atPath: base) else { return }
         
@@ -533,13 +588,14 @@ class SweePurgeEngine {
             if fm.fileExists(atPath: subPath, isDirectory: &isDir), isDir.boolValue {
                 let target = (subPath as NSString).appendingPathComponent(childPattern)
                 if fm.fileExists(atPath: target) {
-                    cleanDirectoryContents(target)
+                    reporter?.reportPath(target)
+                    cleanDirectoryContents(target, reporter: reporter)
                 }
             }
         }
     }
     
-    static func cleanStaleIncompleteDownloads(in downloadsPath: String) {
+    static func cleanStaleIncompleteDownloads(in downloadsPath: String, reporter: ProgressReporter? = nil) {
         let fm = FileManager.default
         guard let files = try? fm.contentsOfDirectory(atPath: downloadsPath) else { return }
         let incompleteExtensions = ["crdownload", "part", "download"]
@@ -548,6 +604,7 @@ class SweePurgeEngine {
             let ext = (file as NSString).pathExtension.lowercased()
             if incompleteExtensions.contains(ext) {
                 let fullPath = (downloadsPath as NSString).appendingPathComponent(file)
+                reporter?.reportPath(fullPath)
                 try? fm.removeItem(atPath: fullPath)
             }
         }
