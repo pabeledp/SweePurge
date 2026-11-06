@@ -6,6 +6,7 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
     var homeDir: String
     var appIcon: NSImage?
     var hasFDA: Bool = false
+    var deepBtn: NSButton!
     
     init(homeDir: String, appIcon: NSImage?) {
         self.homeDir = homeDir
@@ -34,6 +35,7 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
         window.isMovableByWindowBackground = true
+        window.initialFirstResponder = nil // Prevents default focus outline
         window.center()
         
         // Native Frosted Glass Background
@@ -78,7 +80,7 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
         let cardY = height - 250
         let cardView = NSBox(frame: NSRect(x: 30, y: cardY, width: cardWidth, height: cardHeight))
         cardView.boxType = .custom
-        cardView.borderWidth = 0 // No stroke
+        cardView.borderWidth = 0 // Zero border stroke
         cardView.cornerRadius = 8
         cardView.fillColor = NSColor.controlBackgroundColor.withAlphaComponent(0.35)
         
@@ -99,7 +101,7 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
         cardView.addSubview(cardContent)
         visualEffect.addSubview(cardView)
         
-        // --- 5. Safety Indicator (Simple Monochrome, No Bright Green) ---
+        // --- 5. Safety Indicator (Neutral Monochrome) ---
         let safetyLabel = NSTextField(frame: NSRect(x: 30, y: height - 274, width: width - 60, height: 16))
         safetyLabel.stringValue = "100% Safe: Personal files, active projects & licenses untouched"
         safetyLabel.font = NSFont.systemFont(ofSize: 10.5, weight: .regular)
@@ -111,14 +113,16 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
         safetyLabel.isSelectable = false
         visualEffect.addSubview(safetyLabel)
         
-        // --- 6. Deep Cleaning Button (Standard macOS Rounded Button Shape, Placed Right Above Other Buttons) ---
-        let deepBtnWidth: CGFloat = 220
+        // --- 6. Deep Cleaning Button (No Blue Stroke, No Focus Ring, Standard Neutral Look) ---
+        let deepBtnWidth: CGFloat = 200
         let deepBtnHeight: CGFloat = 30
         let deepBtnY: CGFloat = 112
-        let deepBtn = NSButton(frame: NSRect(x: (width - deepBtnWidth) / 2, y: deepBtnY, width: deepBtnWidth, height: deepBtnHeight))
+        deepBtn = NSButton(frame: NSRect(x: (width - deepBtnWidth) / 2, y: deepBtnY, width: deepBtnWidth, height: deepBtnHeight))
         deepBtn.title = hasFDA ? "Deep Cleaning: Active" : "Deep Cleaning Mode"
         deepBtn.bezelStyle = .rounded
         deepBtn.font = NSFont.systemFont(ofSize: 11.5, weight: .regular)
+        deepBtn.contentTintColor = NSColor.secondaryLabelColor
+        deepBtn.focusRingType = .none // Completely removes blue focus ring / stroke
         deepBtn.target = self
         deepBtn.action = #selector(deepCleaningClicked)
         visualEffect.addSubview(deepBtn)
@@ -134,6 +138,7 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
         cancelBtn.title = "Cancel"
         cancelBtn.bezelStyle = .rounded
         cancelBtn.font = NSFont.systemFont(ofSize: 12, weight: .regular)
+        cancelBtn.focusRingType = .none
         cancelBtn.target = self
         cancelBtn.action = #selector(cancelClicked)
         visualEffect.addSubview(cancelBtn)
@@ -143,6 +148,7 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
         cleanBtn.bezelStyle = .rounded
         cleanBtn.keyEquivalent = "\r"
         cleanBtn.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        cleanBtn.focusRingType = .none
         cleanBtn.target = self
         cleanBtn.action = #selector(cleanClicked)
         visualEffect.addSubview(cleanBtn)
@@ -181,6 +187,7 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
     }
     
     @objc func deepCleaningClicked() {
+        // Native macOS Sheet Modal: Automatically blurs and locks the background window
         let alert = NSAlert()
         alert.messageText = "Deep Cleaning Mode"
         alert.informativeText = """
@@ -201,10 +208,18 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
         alert.addButton(withTitle: "Open Settings")
         alert.addButton(withTitle: "Cancel")
         
-        let res = alert.runModal()
-        if res == .alertFirstButtonReturn {
-            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles") {
-                NSWorkspace.shared.open(url)
+        // Attaches sheet directly to window, blurring and dimming the background window
+        alert.beginSheetModal(for: window) { [weak self] response in
+            guard let self = self else { return }
+            if response == .alertFirstButtonReturn {
+                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles") {
+                    NSWorkspace.shared.open(url)
+                }
+            }
+            // Check FDA again and update label
+            self.hasFDA = self.checkFullDiskAccess()
+            if self.hasFDA {
+                self.deepBtn.title = "Deep Cleaning: Active"
             }
         }
     }
