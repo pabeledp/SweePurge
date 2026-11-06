@@ -14,6 +14,10 @@
     <string>2.0.1</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
+    <key>CFBundleSupportedPlatforms</key>
+    <array>
+        <string>MacOSX</string>
+    </array>
     <key>CFBundleSignature</key>
     <string>????</string>
     <key>CFBundleExecutable</key>

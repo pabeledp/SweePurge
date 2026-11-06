@@ -43,6 +43,7 @@ if let img = NSImage(contentsOfFile: iconPath) {
 "
 
 echo "📦 Creating SweePurge.dmg installer..."
+hdiutil detach /Volumes/SweePurge* 2>/dev/null || true
 rm -rf "$DMG_DIR" "$DMG_OUTPUT"
 mkdir -p "$DMG_DIR"
 

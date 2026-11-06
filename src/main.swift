@@ -3,10 +3,18 @@ import Foundation
 
 class SweePurgeWindowController: NSObject, NSWindowDelegate {
     var window: NSWindow!
+    var visualEffect: NSVisualEffectView!
     var homeDir: String
     var appIcon: NSImage?
     var hasFDA: Bool = false
+    
+    // UI Elements
+    var subtitleLabel: NSTextField!
+    var cardView: NSBox!
+    var safetyLabel: NSTextField!
     var deepBtn: NSButton!
+    var cancelBtn: NSButton!
+    var cleanBtn: NSButton!
     
     init(homeDir: String, appIcon: NSImage?) {
         self.homeDir = homeDir
@@ -27,7 +35,7 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
         
         window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: width, height: height),
-            styleMask: [.titled, .closable, .fullSizeContentView],
+            styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
@@ -35,24 +43,28 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
         window.isMovableByWindowBackground = true
-        window.initialFirstResponder = nil // Prevents default focus outline
         window.center()
         
+        // Ensure Traffic Light buttons are properly configured
+        window.standardWindowButton(.closeButton)?.isEnabled = true
+        window.standardWindowButton(.miniaturizeButton)?.isEnabled = true
+        window.standardWindowButton(.zoomButton)?.isHidden = true
+        
         // Native Frosted Glass Background
-        let visualEffect = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: width, height: height))
+        visualEffect = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: width, height: height))
         visualEffect.blendingMode = .behindWindow
         visualEffect.state = .active
         visualEffect.material = .popover
         window.contentView = visualEffect
         
         // --- 1. App Icon ---
-        let iconView = NSImageView(frame: NSRect(x: (width - 64) / 2, y: height - 86, width: 64, height: 64))
+        let iconView = NSImageView(frame: NSRect(x: (width - 64) / 2, y: height - 88, width: 64, height: 64))
         iconView.image = appIcon
         iconView.imageScaling = .scaleProportionallyUpOrDown
         visualEffect.addSubview(iconView)
         
         // --- 2. Title ---
-        let titleLabel = NSTextField(frame: NSRect(x: 20, y: height - 118, width: width - 40, height: 24))
+        let titleLabel = NSTextField(frame: NSRect(x: 20, y: height - 120, width: width - 40, height: 24))
         titleLabel.stringValue = "SweePurge"
         titleLabel.font = NSFont.systemFont(ofSize: 19, weight: .bold)
         titleLabel.alignment = .center
@@ -63,7 +75,7 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
         visualEffect.addSubview(titleLabel)
         
         // --- 3. Subtitle ---
-        let subtitleLabel = NSTextField(frame: NSRect(x: 20, y: height - 138, width: width - 40, height: 16))
+        subtitleLabel = NSTextField(frame: NSRect(x: 20, y: height - 142, width: width - 40, height: 16))
         subtitleLabel.stringValue = "Universal Mac Storage & Cache Purger"
         subtitleLabel.font = NSFont.systemFont(ofSize: 12, weight: .regular)
         subtitleLabel.textColor = NSColor.secondaryLabelColor
@@ -74,13 +86,13 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
         subtitleLabel.isSelectable = false
         visualEffect.addSubview(subtitleLabel)
         
-        // --- 4. Feature Box (Simple, Zero Stroke / Border) ---
-        let cardWidth = width - 60
-        let cardHeight: CGFloat = 96
-        let cardY = height - 250
-        let cardView = NSBox(frame: NSRect(x: 30, y: cardY, width: cardWidth, height: cardHeight))
+        // --- 4. Feature Box (Centered, Simple, Zero Stroke / Border) ---
+        let cardWidth: CGFloat = width - 60
+        let cardHeight: CGFloat = 92
+        let cardY: CGFloat = 206
+        cardView = NSBox(frame: NSRect(x: 30, y: cardY, width: cardWidth, height: cardHeight))
         cardView.boxType = .custom
-        cardView.borderWidth = 0 // Zero border stroke
+        cardView.borderWidth = 0
         cardView.cornerRadius = 8
         cardView.fillColor = NSColor.controlBackgroundColor.withAlphaComponent(0.35)
         
@@ -90,7 +102,7 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
             "• Saved Application States, Stale Downloads & Trash"
         ]
         
-        let cardContent = NSTextField(frame: NSRect(x: 16, y: 10, width: cardWidth - 32, height: cardHeight - 20))
+        let cardContent = NSTextField(frame: NSRect(x: 16, y: 8, width: cardWidth - 32, height: cardHeight - 16))
         cardContent.stringValue = features.joined(separator: "\n\n")
         cardContent.font = NSFont.systemFont(ofSize: 11.5, weight: .regular)
         cardContent.textColor = NSColor.labelColor
@@ -102,7 +114,7 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
         visualEffect.addSubview(cardView)
         
         // --- 5. Safety Indicator (Neutral Monochrome) ---
-        let safetyLabel = NSTextField(frame: NSRect(x: 30, y: height - 274, width: width - 60, height: 16))
+        safetyLabel = NSTextField(frame: NSRect(x: 20, y: 176, width: width - 40, height: 16))
         safetyLabel.stringValue = "100% Safe: Personal files, active projects & licenses untouched"
         safetyLabel.font = NSFont.systemFont(ofSize: 10.5, weight: .regular)
         safetyLabel.textColor = NSColor.secondaryLabelColor
@@ -113,16 +125,17 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
         safetyLabel.isSelectable = false
         visualEffect.addSubview(safetyLabel)
         
-        // --- 6. Deep Cleaning Button (No Blue Stroke, No Focus Ring, Standard Neutral Look) ---
-        let deepBtnWidth: CGFloat = 200
-        let deepBtnHeight: CGFloat = 30
-        let deepBtnY: CGFloat = 112
+        // --- 6. Deep Cleaning Button (Standard Rounded Shape, Right Above Action Buttons, No Stroke) ---
+        let deepBtnWidth: CGFloat = 220
+        let deepBtnHeight: CGFloat = 32
+        let deepBtnY: CGFloat = 110
         deepBtn = NSButton(frame: NSRect(x: (width - deepBtnWidth) / 2, y: deepBtnY, width: deepBtnWidth, height: deepBtnHeight))
         deepBtn.title = hasFDA ? "Deep Cleaning: Active" : "Deep Cleaning Mode"
         deepBtn.bezelStyle = .rounded
         deepBtn.font = NSFont.systemFont(ofSize: 11.5, weight: .regular)
         deepBtn.contentTintColor = NSColor.secondaryLabelColor
-        deepBtn.focusRingType = .none // Completely removes blue focus ring / stroke
+        deepBtn.focusRingType = .none
+        deepBtn.refusesFirstResponder = true // Completely eliminates blue focus stroke
         deepBtn.target = self
         deepBtn.action = #selector(deepCleaningClicked)
         visualEffect.addSubview(deepBtn)
@@ -132,29 +145,30 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
         let btnHeight: CGFloat = 32
         let totalBtnWidth = (btnWidth * 2) + 14
         let btnStartX = (width - totalBtnWidth) / 2
-        let btnY: CGFloat = 68
+        let btnY: CGFloat = 64
         
-        let cancelBtn = NSButton(frame: NSRect(x: btnStartX, y: btnY, width: btnWidth, height: btnHeight))
+        cancelBtn = NSButton(frame: NSRect(x: btnStartX, y: btnY, width: btnWidth, height: btnHeight))
         cancelBtn.title = "Cancel"
         cancelBtn.bezelStyle = .rounded
         cancelBtn.font = NSFont.systemFont(ofSize: 12, weight: .regular)
         cancelBtn.focusRingType = .none
+        cancelBtn.refusesFirstResponder = true // Completely eliminates blue focus stroke
         cancelBtn.target = self
         cancelBtn.action = #selector(cancelClicked)
         visualEffect.addSubview(cancelBtn)
         
-        let cleanBtn = NSButton(frame: NSRect(x: btnStartX + btnWidth + 14, y: btnY, width: btnWidth, height: btnHeight))
+        cleanBtn = NSButton(frame: NSRect(x: btnStartX + btnWidth + 14, y: btnY, width: btnWidth, height: btnHeight))
         cleanBtn.title = "Clean All Caches Now"
         cleanBtn.bezelStyle = .rounded
-        cleanBtn.keyEquivalent = "\r"
         cleanBtn.font = NSFont.systemFont(ofSize: 12, weight: .medium)
         cleanBtn.focusRingType = .none
+        cleanBtn.refusesFirstResponder = true
         cleanBtn.target = self
         cleanBtn.action = #selector(cleanClicked)
         visualEffect.addSubview(cleanBtn)
         
         // --- 8. Footer Developer Credit (Centered at Bottom) ---
-        let creditContainer = NSView(frame: NSRect(x: 0, y: 12, width: width, height: 32))
+        let creditContainer = NSView(frame: NSRect(x: 0, y: 12, width: width, height: 34))
         
         let creditLine1 = NSTextField(frame: NSRect(x: 0, y: 16, width: width, height: 14))
         creditLine1.stringValue = "Developed by"
@@ -179,6 +193,10 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
         creditContainer.addSubview(creditLine2)
         
         visualEffect.addSubview(creditContainer)
+        
+        // Ensure no button starts with keyboard focus outline
+        window.initialFirstResponder = nil
+        window.makeFirstResponder(nil)
     }
     
     func show() {
@@ -187,7 +205,19 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
     }
     
     @objc func deepCleaningClicked() {
-        // Native macOS Sheet Modal: Automatically blurs and locks the background window
+        // Create full window blur/dim overlay
+        let overlay = NSVisualEffectView(frame: visualEffect.bounds)
+        overlay.blendingMode = .withinWindow
+        overlay.material = .fullScreenUI
+        overlay.state = .active
+        overlay.alphaValue = 0.0
+        visualEffect.addSubview(overlay, positioned: .above, relativeTo: nil)
+        
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.25
+            overlay.animator().alphaValue = 0.92
+        }
+        
         let alert = NSAlert()
         alert.messageText = "Deep Cleaning Mode"
         alert.informativeText = """
@@ -208,15 +238,20 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
         alert.addButton(withTitle: "Open Settings")
         alert.addButton(withTitle: "Cancel")
         
-        // Attaches sheet directly to window, blurring and dimming the background window
         alert.beginSheetModal(for: window) { [weak self] response in
             guard let self = self else { return }
+            NSAnimationContext.runAnimationGroup({ context in
+                context.duration = 0.2
+                overlay.animator().alphaValue = 0.0
+            }, completionHandler: {
+                overlay.removeFromSuperview()
+            })
+            
             if response == .alertFirstButtonReturn {
                 if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles") {
                     NSWorkspace.shared.open(url)
                 }
             }
-            // Check FDA again and update label
             self.hasFDA = self.checkFullDiskAccess()
             if self.hasFDA {
                 self.deepBtn.title = "Deep Cleaning: Active"
@@ -230,8 +265,93 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
     }
     
     @objc func cleanClicked() {
-        window.close()
-        SweePurgeEngine.run(homeDir: homeDir, appIcon: appIcon)
+        // Transition to In-Window Progress View
+        cardView.isHidden = true
+        safetyLabel.isHidden = true
+        deepBtn.isHidden = true
+        cancelBtn.isHidden = true
+        cleanBtn.isHidden = true
+        
+        subtitleLabel.stringValue = "Optimizing Mac Storage..."
+        
+        let width = window.frame.width
+        let spinner = NSProgressIndicator(frame: NSRect(x: (width - 32) / 2, y: 220, width: 32, height: 32))
+        spinner.style = .spinning
+        spinner.controlSize = .regular
+        spinner.isIndeterminate = true
+        spinner.startAnimation(nil)
+        visualEffect.addSubview(spinner)
+        
+        let progressLabel = NSTextField(frame: NSRect(x: 20, y: 170, width: width - 40, height: 22))
+        progressLabel.stringValue = "Scanning and purging junk files..."
+        progressLabel.font = NSFont.systemFont(ofSize: 12, weight: .regular)
+        progressLabel.textColor = NSColor.secondaryLabelColor
+        progressLabel.alignment = .center
+        progressLabel.isBezeled = false
+        progressLabel.drawsBackground = false
+        progressLabel.isEditable = false
+        progressLabel.isSelectable = false
+        visualEffect.addSubview(progressLabel)
+        
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self = self else { return }
+            SweePurgeEngine.run(
+                homeDir: self.homeDir,
+                appIcon: self.appIcon,
+                progressUpdate: { status in
+                    DispatchQueue.main.async {
+                        progressLabel.stringValue = status
+                    }
+                },
+                completion: { reclaimed, freeTotal in
+                    DispatchQueue.main.async {
+                        spinner.stopAnimation(nil)
+                        spinner.removeFromSuperview()
+                        progressLabel.removeFromSuperview()
+                        self.showCompletionUI(reclaimed: reclaimed, freeTotal: freeTotal)
+                    }
+                }
+            )
+        }
+    }
+    
+    func showCompletionUI(reclaimed: String, freeTotal: String) {
+        let width = window.frame.width
+        subtitleLabel.stringValue = "Optimization Complete"
+        subtitleLabel.font = NSFont.systemFont(ofSize: 13, weight: .medium)
+        
+        let infoBox = NSBox(frame: NSRect(x: 30, y: 150, width: width - 60, height: 110))
+        infoBox.boxType = .custom
+        infoBox.borderWidth = 0
+        infoBox.cornerRadius = 8
+        infoBox.fillColor = NSColor.controlBackgroundColor.withAlphaComponent(0.35)
+        
+        let infoContent = NSTextField(frame: NSRect(x: 16, y: 16, width: width - 92, height: 78))
+        infoContent.stringValue = """
+        SweePurge has successfully cleaned your Mac.
+
+        • Storage Reclaimed: \(reclaimed)
+        • Total Available Disk Space: \(freeTotal)
+        """
+        infoContent.font = NSFont.systemFont(ofSize: 12.5, weight: .regular)
+        infoContent.textColor = NSColor.labelColor
+        infoContent.alignment = .center
+        infoContent.isBezeled = false
+        infoContent.drawsBackground = false
+        infoContent.isEditable = false
+        infoContent.isSelectable = false
+        infoBox.addSubview(infoContent)
+        visualEffect.addSubview(infoBox)
+        
+        let doneBtn = NSButton(frame: NSRect(x: (width - 140) / 2, y: 84, width: 140, height: 32))
+        doneBtn.title = "Done"
+        doneBtn.bezelStyle = .rounded
+        doneBtn.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        doneBtn.focusRingType = .none
+        doneBtn.refusesFirstResponder = true
+        doneBtn.target = NSApp
+        doneBtn.action = #selector(NSApplication.terminate(_:))
+        visualEffect.addSubview(doneBtn)
     }
     
     func windowWillClose(_ notification: Notification) {
@@ -240,105 +360,22 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
 }
 
 class SweePurgeEngine {
-    static func run(homeDir: String, appIcon: NSImage?) {
+    static func run(homeDir: String, appIcon: NSImage?, progressUpdate: @escaping (String) -> Void, completion: @escaping (String, String) -> Void) {
         let freeBefore = getFreeDiskSpaceBytes()
         
-        performDeepUniversalCleanup(homeDir: homeDir)
+        performDeepUniversalCleanup(homeDir: homeDir, progress: progressUpdate)
         
         let freeAfter = getFreeDiskSpaceBytes()
         let reclaimedBytes = max(0, freeAfter - freeBefore)
         let reclaimedFormatted = formatBytes(reclaimedBytes)
+        let freeTotal = formatBytes(freeAfter)
         
         sendNotification(
             title: "SweePurge: Mac Optimized",
             message: "Reclaimed \(reclaimedFormatted) across 400+ apps & system storage."
         )
         
-        showSuccessDialog(reclaimed: reclaimedFormatted, freeTotal: formatBytes(freeAfter), appIcon: appIcon)
-    }
-    
-    static func showSuccessDialog(reclaimed: String, freeTotal: String, appIcon: NSImage?) {
-        let width: CGFloat = 420
-        let height: CGFloat = 300
-        
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: width, height: height),
-            styleMask: [.titled, .closable, .fullSizeContentView],
-            backing: .buffered,
-            defer: false
-        )
-        window.titlebarAppearsTransparent = true
-        window.titleVisibility = .hidden
-        window.isMovableByWindowBackground = true
-        window.center()
-        
-        let visualEffect = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: width, height: height))
-        visualEffect.blendingMode = .behindWindow
-        visualEffect.state = .active
-        visualEffect.material = .popover
-        window.contentView = visualEffect
-        
-        let iconView = NSImageView(frame: NSRect(x: (width - 56) / 2, y: height - 76, width: 56, height: 56))
-        iconView.image = appIcon
-        iconView.imageScaling = .scaleProportionallyUpOrDown
-        visualEffect.addSubview(iconView)
-        
-        let titleLabel = NSTextField(frame: NSRect(x: 20, y: height - 106, width: width - 40, height: 24))
-        titleLabel.stringValue = "Optimization Complete"
-        titleLabel.font = NSFont.systemFont(ofSize: 18, weight: .bold)
-        titleLabel.alignment = .center
-        titleLabel.isBezeled = false
-        titleLabel.drawsBackground = false
-        titleLabel.isEditable = false
-        visualEffect.addSubview(titleLabel)
-        
-        let infoLabel = NSTextField(frame: NSRect(x: 30, y: height - 176, width: width - 60, height: 56))
-        infoLabel.stringValue = """
-        SweePurge has successfully cleaned your Mac.
-
-        • Storage Reclaimed: \(reclaimed)
-        • Total Available Disk Space: \(freeTotal)
-        """
-        infoLabel.font = NSFont.systemFont(ofSize: 12, weight: .regular)
-        infoLabel.alignment = .center
-        infoLabel.isBezeled = false
-        infoLabel.drawsBackground = false
-        infoLabel.isEditable = false
-        visualEffect.addSubview(infoLabel)
-        
-        let doneBtn = NSButton(frame: NSRect(x: (width - 140) / 2, y: 64, width: 140, height: 32))
-        doneBtn.title = "Done"
-        doneBtn.bezelStyle = .rounded
-        doneBtn.keyEquivalent = "\r"
-        doneBtn.target = NSApp
-        doneBtn.action = #selector(NSApplication.terminate(_:))
-        visualEffect.addSubview(doneBtn)
-        
-        let creditContainer = NSView(frame: NSRect(x: 0, y: 12, width: width, height: 32))
-        let creditLine1 = NSTextField(frame: NSRect(x: 0, y: 16, width: width, height: 14))
-        creditLine1.stringValue = "Developed by"
-        creditLine1.font = NSFont.systemFont(ofSize: 8.5, weight: .regular)
-        creditLine1.textColor = NSColor.secondaryLabelColor.withAlphaComponent(0.35)
-        creditLine1.alignment = .center
-        creditLine1.isBezeled = false
-        creditLine1.drawsBackground = false
-        creditLine1.isEditable = false
-        creditContainer.addSubview(creditLine1)
-        
-        let creditLine2 = NSTextField(frame: NSRect(x: 0, y: 0, width: width, height: 16))
-        creditLine2.stringValue = "A M Pabel, Team Captain at FramEmpire"
-        creditLine2.font = NSFont.systemFont(ofSize: 9.5, weight: .regular)
-        creditLine2.textColor = NSColor.secondaryLabelColor.withAlphaComponent(0.40)
-        creditLine2.alignment = .center
-        creditLine2.isBezeled = false
-        creditLine2.drawsBackground = false
-        creditLine2.isEditable = false
-        creditContainer.addSubview(creditLine2)
-        visualEffect.addSubview(creditContainer)
-        
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
-        NSApp.run()
+        completion(reclaimedFormatted, freeTotal)
     }
     
     static func getFreeDiskSpaceBytes() -> Int64 {
@@ -363,14 +400,16 @@ class SweePurgeEngine {
         return formatter.string(fromByteCount: bytes)
     }
     
-    static func performDeepUniversalCleanup(homeDir: String) {
+    static func performDeepUniversalCleanup(homeDir: String, progress: @escaping (String) -> Void) {
         let fm = FileManager.default
         
         // 1. TIER 1: GLOBAL USER & SYSTEM CACHES
+        progress("Purging 400+ Apps Caches & Storage...")
         cleanDirectoryContents("\(homeDir)/Library/Caches")
         cleanDirectoryContents("/Library/Caches")
         
         // 2. TIER 2: ELECTRON & DESKTOP APPS
+        progress("Cleaning Application Support & App Caches...")
         let appSupportDir = "\(homeDir)/Library/Application Support"
         if let apps = try? fm.contentsOfDirectory(atPath: appSupportDir) {
             let cacheFolderNames = [
@@ -388,6 +427,7 @@ class SweePurgeEngine {
         }
         
         // 3. TIER 3: PRO VIDEO, 3D & AUDIO CREATIVE SUITES
+        progress("Purging Adobe Media Caches & Scratch Disks...")
         let adobePaths = [
             "\(homeDir)/Library/Application Support/Adobe/Common/Media Cache Files",
             "\(homeDir)/Library/Application Support/Adobe/Common/Media Cache",
@@ -402,34 +442,26 @@ class SweePurgeEngine {
         cleanWildcardSubfolders(base: "\(homeDir)/Documents/Adobe/Premiere Pro", childPattern: "Adobe Premiere Pro Auto-Save")
         cleanWildcardSubfolders(base: "\(homeDir)/Documents/Adobe/After Effects", childPattern: "Adobe After Effects Auto-Save")
         
-        // DaVinci Resolve
+        // DaVinci Resolve & 3D Suites
+        progress("Cleaning 3D, Video & DAW Render Caches...")
         cleanDirectoryContents("\(homeDir)/Library/Application Support/Blackmagic Design/DaVinci Resolve/CacheClip")
         cleanDirectoryContents("\(homeDir)/Library/Application Support/Blackmagic Design/DaVinci Resolve/.gallery")
         cleanDirectoryContents("\(homeDir)/Library/Application Support/Blackmagic Design/DaVinci Resolve/ProxyMedia")
-        
-        // Final Cut Pro
         cleanDirectoryContents("\(homeDir)/Movies/Motion Templates.localized/Cache")
-        
-        // Blender
         cleanWildcardSubfolders(base: "\(homeDir)/Library/Application Support/Blender", childPattern: "cache")
         cleanDirectoryContents("\(homeDir)/.config/blender/cache")
-        
-        // Cinema 4D / Maxon
         cleanWildcardSubfolders(base: "\(homeDir)/Library/Application Support/Maxon", childPattern: "cache")
-        
-        // Unreal Engine & Unity
         cleanDirectoryContents("\(homeDir)/Library/Caches/com.epicgames.UnrealEngine")
         cleanDirectoryContents("\(homeDir)/Library/Application Support/Epic/UnrealEngine/Common/DerivedDataCache")
         cleanDirectoryContents("\(homeDir)/Library/Application Support/Epic/EpicGamesLauncher/Saved/Logs")
         cleanDirectoryContents("\(homeDir)/Library/Unity/cache")
         cleanDirectoryContents("\(homeDir)/Library/Caches/com.unity3d.UnityEditor")
-        
-        // Audio DAWs
         cleanDirectoryContents("\(homeDir)/Library/Caches/AudioUnitCache")
         cleanDirectoryContents("\(homeDir)/Library/Application Support/Ableton/Live Database/Cache")
         cleanDirectoryContents("\(homeDir)/Music/Audio Music Apps/Freeze Files")
         
         // 4. TIER 4: DEVELOPER & BUILD TOOLCHAINS
+        progress("Cleaning Developer Toolchains & Build Artifacts...")
         let devCaches = [
             "\(homeDir)/Library/Developer/Xcode/DerivedData",
             "\(homeDir)/Library/Developer/Xcode/Archives",
@@ -463,15 +495,14 @@ class SweePurgeEngine {
         runProcess(path: "/opt/homebrew/bin/docker", args: ["builder", "prune", "-f"])
         
         // 5. TIER 5: DEEP JUNK, SAVED STATES & STALE DOWNLOADS
+        progress("Reclaiming Saved States, Logs & Purgeable Space...")
         cleanDirectoryContents("\(homeDir)/Library/Saved Application State")
         cleanStaleIncompleteDownloads(in: "\(homeDir)/Downloads")
-        
         cleanDirectoryContents("\(homeDir)/Library/Logs")
         cleanDirectoryContents("/Library/Logs")
         cleanDirectoryContents("\(homeDir)/Library/Logs/DiagnosticReports")
         cleanDirectoryContents("/Library/Logs/DiagnosticReports")
         cleanDirectoryContents("\(homeDir)/Library/Application Support/CrashReporter")
-        
         cleanDirectoryContents("\(homeDir)/.Trash")
         purgeTimeMachineLocalSnapshots()
         
@@ -583,11 +614,49 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var windowController: SweePurgeWindowController?
     
     func applicationDidFinishLaunching(_ notification: Notification) {
+        setupMenu()
         let homeDir = FileManager.default.homeDirectoryForCurrentUser.path
         let appIcon = NSImage(contentsOfFile: Bundle.main.path(forResource: "AppIcon", ofType: "icns") ?? "") ?? NSApp.applicationIconImage
         
         windowController = SweePurgeWindowController(homeDir: homeDir, appIcon: appIcon)
         windowController?.show()
+    }
+    
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if !flag {
+            windowController?.window.makeKeyAndOrderFront(nil)
+        }
+        return true
+    }
+    
+    private func setupMenu() {
+        let mainMenu = NSMenu()
+        
+        // App Menu
+        let appMenuItem = NSMenuItem()
+        let appMenu = NSMenu()
+        appMenu.addItem(withTitle: "About SweePurge", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+        appMenu.addItem(NSMenuItem.separator())
+        appMenu.addItem(withTitle: "Hide SweePurge", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
+        let hideOthersItem = NSMenuItem(title: "Hide Others", action: #selector(NSApplication.hideOtherApplications(_:)), keyEquivalent: "h")
+        hideOthersItem.keyEquivalentModifierMask = [.command, .option]
+        appMenu.addItem(hideOthersItem)
+        appMenu.addItem(withTitle: "Show All", action: #selector(NSApplication.unhideAllApplications(_:)), keyEquivalent: "")
+        appMenu.addItem(NSMenuItem.separator())
+        appMenu.addItem(withTitle: "Quit SweePurge", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        appMenuItem.submenu = appMenu
+        mainMenu.addItem(appMenuItem)
+        
+        // Window Menu (Standard macOS window operations & Cmd+M minimize)
+        let windowMenuItem = NSMenuItem()
+        let windowMenu = NSMenu(title: "Window")
+        windowMenu.addItem(withTitle: "Minimize", action: #selector(NSWindow.miniaturize(_:)), keyEquivalent: "m")
+        windowMenu.addItem(withTitle: "Close", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
+        windowMenuItem.submenu = windowMenu
+        mainMenu.addItem(windowMenuItem)
+        
+        NSApp.mainMenu = mainMenu
+        NSApp.windowsMenu = windowMenu
     }
 }
 
