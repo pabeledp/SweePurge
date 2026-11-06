@@ -5,10 +5,10 @@
 # SweePurge
 ### 1-Click Universal System Storage & App Cache Purger for macOS
 
-[![macOS](https://img.shields.io/badge/macOS-12.0%2B-000000?style=flat-square&logo=apple&logoColor=white)](https://apple.com)
+[![macOS](https://img.shields.io/badge/macOS-10.15%2B%20Universal-000000?style=flat-square&logo=apple&logoColor=white)](https://apple.com)
 [![Swift](https://img.shields.io/badge/Language-Swift%205-FA7343?style=flat-square&logo=swift&logoColor=white)](https://swift.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.flat-square)](LICENSE)
-[![Release](https://img.shields.io/badge/Version-2.0.0-emerald?style=flat-square)](https://github.com/pabeledp/SweePurge/releases)
+[![Release](https://img.shields.io/badge/Version-2.0.1-emerald?style=flat-square)](https://github.com/pabeledp/SweePurge/releases)
 
 <p align="center">
   <b>Tired of Mac's mysterious "System Data" and giant software caches eating all your disk space?</b><br/>
@@ -20,12 +20,12 @@
 ### <img src="assets/icons/download.svg" width="20" height="20" align="center" /> Download SweePurge for Mac
 
 <a href="https://github.com/pabeledp/SweePurge/raw/main/SweePurge.dmg">
-  <img src="https://custom-icon-badges.demolab.com/badge/DOWNLOAD-SweePurge.dmg%20(Direct%20Install)-007AFF?style=for-the-badge&logo=download&logoColor=white" height="48" alt="Download SweePurge"/>
+  <img src="https://custom-icon-badges.demolab.com/badge/DOWNLOAD-SweePurge.dmg%20(Universal%20Install)-007AFF?style=for-the-badge&logo=download&logoColor=white" height="48" alt="Download SweePurge"/>
 </a>
 
 <br/>
 
-<sub>Universal Binary • macOS Monterey, Ventura, Sonoma, Sequoia • Size: ~1.1 MB</sub>
+<sub>Universal 2 Binary (Apple Silicon M1–M5 + Intel) • macOS 10.15 Catalina to macOS 27+ • Size: ~1.1 MB</sub>
 
 ---
 
