@@ -11,6 +11,16 @@ public class TaskbarIdentity {
 
     [DllImport("user32.dll", SetLastError = true)]
     public static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct SHQUERYRBINFO {
+        public int cbSize;
+        public long i64Size;
+        public long i64NumItems;
+    }
+
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+    public static extern int SHQueryRecycleBin(string pszRootPath, ref SHQUERYRBINFO pSHQueryRBInfo);
 }
 "@
 Add-Type -TypeDefinition $appIdCode -ErrorAction SilentlyContinue
@@ -329,6 +339,10 @@ function Format-Bytes([Int64]$bytes) {
 # Helper: Get Free Disk Space
 function Get-DriveFreeSpace() {
     try {
+        $di = [System.IO.DriveInfo]::new("C")
+        if ($di.IsReady) { return [Int64]$di.AvailableFreeSpace }
+    } catch {}
+    try {
         $drive = Get-PSDrive -Name C -ErrorAction SilentlyContinue
         if ($drive) { return [Int64]$drive.Free }
     } catch {}
@@ -360,30 +374,37 @@ function Update-ProgressUI([string]$stage, [string]$path) {
     }
 }
 
-# High-Performance Directory Cleaning Helper using direct .NET I/O (10x-50x faster)
-function Clean-DirContents([string]$targetDir, [string]$stageName) {
-    if (-not (Test-Path -LiteralPath $targetDir)) { return }
+# High-Performance Recursive Directory Cleaning Helper with Exact Byte Accumulation
+function Clean-DirectoryRecursive([System.IO.DirectoryInfo]$dir, [string]$stageName) {
     try {
-        $dir = New-Object System.IO.DirectoryInfo($targetDir)
-        
-        # Fast file deletion
         foreach ($file in $dir.EnumerateFiles()) {
             if ($file.Name -like "*sweepurge*") { continue }
-            Update-ProgressUI $stageName $file.FullName
             try {
+                $fileLen = $file.Length
                 $file.Attributes = [System.IO.FileAttributes]::Normal
                 $file.Delete()
+                $global:totalReclaimedBytes += $fileLen
+                Update-ProgressUI $stageName $file.FullName
             } catch {}
         }
-        
-        # Fast subdirectory deletion
-        foreach ($subDir in $dir.EnumerateDirectories()) {
-            if ($subDir.Name -like "*sweepurge*") { continue }
-            Update-ProgressUI $stageName $subDir.FullName
+    } catch {}
+
+    try {
+        foreach ($sub in $dir.EnumerateDirectories()) {
+            if ($sub.Name -like "*sweepurge*") { continue }
+            Clean-DirectoryRecursive $sub $stageName
             try {
-                $subDir.Delete($true)
+                $sub.Delete($true)
             } catch {}
         }
+    } catch {}
+}
+
+function Clean-DirContents([string]$targetDir, [string]$stageName) {
+    if (-not [System.IO.Directory]::Exists($targetDir)) { return }
+    try {
+        $dir = New-Object System.IO.DirectoryInfo($targetDir)
+        Clean-DirectoryRecursive $dir $stageName
     } catch {}
 }
 
@@ -394,6 +415,7 @@ $btnClean.Add_Click({
     $txtSubtitle.Text = "Optimizing Windows Storage..."
     Invoke-UIUpdate
 
+    $global:totalReclaimedBytes = [Int64]0
     $freeBefore = Get-DriveFreeSpace
 
     # 1. TIER 1: USER & SYSTEM TEMP
@@ -496,18 +518,31 @@ $btnClean.Add_Click({
             $_.Extension -in @(".crdownload", ".part", ".download")
         } | ForEach-Object {
             Update-ProgressUI "Removing Partial Downloads..." $_.FullName
-            Remove-Item -LiteralPath $_.FullName -Force -ErrorAction SilentlyContinue
+            try {
+                $global:totalReclaimedBytes += $_.Length
+                Remove-Item -LiteralPath $_.FullName -Force -ErrorAction SilentlyContinue
+            } catch {}
         }
     }
 
-    # Empty Recycle Bin
+    # Query Recycle Bin size before clearing
     Update-ProgressUI "Emptying Windows Recycle Bin..." ""
+    try {
+        $rb = New-Object TaskbarIdentity+SHQUERYRBINFO
+        $rb.cbSize = [System.Runtime.InteropServices.Marshal]::SizeOf($rb)
+        if ([TaskbarIdentity]::SHQueryRecycleBin($null, [ref]$rb) -eq 0 -and $rb.i64Size -gt 0) {
+            $global:totalReclaimedBytes += $rb.i64Size
+        }
+    } catch {}
+
+    # Empty Recycle Bin
     try {
         Clear-RecycleBin -Force -ErrorAction SilentlyContinue
     } catch {}
 
     $freeAfter = Get-DriveFreeSpace
-    $reclaimedBytes = [Math]::Max(0, $freeAfter - $freeBefore)
+    $driveDelta = [Math]::Max(0, $freeAfter - $freeBefore)
+    $reclaimedBytes = [Math]::Max($global:totalReclaimedBytes, $driveDelta)
 
     $panelProgress.Visibility = [System.Windows.Visibility]::Collapsed
     $panelComplete.Visibility = [System.Windows.Visibility]::Visible
