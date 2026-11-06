@@ -1,5 +1,23 @@
 ﻿# SweePurge Windows Edition - Universal Storage & Cache Purger
 # Developed by A M Pabel, Team Captain at FramEmpire
+# 1. Register AppUserModelID FIRST before ANY WPF/XAML initialization
+$appIdCode = @"
+using System;
+using System.Runtime.InteropServices;
+
+public class TaskbarIdentity {
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    public static extern int SetCurrentProcessExplicitAppUserModelID(string AppID);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+}
+"@
+Add-Type -TypeDefinition $appIdCode -ErrorAction SilentlyContinue
+try {
+    [TaskbarIdentity]::SetCurrentProcessExplicitAppUserModelID("FramEmpire.SweePurge.App.1.0") | Out-Null
+} catch {}
+
 Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase, System.Windows.Forms, System.Drawing
 
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
@@ -10,7 +28,7 @@ $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIden
         Title="SweePurge" Height="480" Width="480"
         WindowStartupLocation="CenterScreen" WindowStyle="None"
         AllowsTransparency="True" Background="Transparent"
-        ResizeMode="CanMinimize" Topmost="False">
+        ResizeMode="CanMinimize" Topmost="False" ShowInTaskbar="True">
     <Border CornerRadius="16" Background="#18181C" BorderBrush="#2A2A32" BorderThickness="1">
         <Grid Margin="20,12,20,16">
             <Grid.RowDefinitions>
@@ -191,6 +209,41 @@ $reader = (New-Object System.Xml.XmlNodeReader $xaml)
 $window = [System.Windows.Markup.XamlReader]::Load($reader)
 
 # Enable dragging by clicking anywhere on window background
+
+# Setup SweePurge Taskbar and Window Icon
+$iconPath = Join-Path $env:TEMP "sweepurge_app.ico"
+if (-not (Test-Path -LiteralPath $iconPath)) {
+    $candidates = @(
+        (Join-Path $PSScriptRoot "icon.ico"),
+        (Join-Path $PSScriptRoot "..\assets\icon.ico"),
+        "C:\Users\EDP Universe\.gemini\antigravity\scratch\SweePurge\windows\assets\icon.ico"
+    )
+    foreach ($cand in $candidates) {
+        if (Test-Path -LiteralPath $cand) {
+            Copy-Item -LiteralPath $cand -Destination $iconPath -Force -ErrorAction SilentlyContinue
+            break
+        }
+    }
+}
+
+$window.ShowInTaskbar = $true
+if (Test-Path -LiteralPath $iconPath) {
+    try {
+        $window.Icon = [System.Windows.Media.Imaging.BitmapFrame]::Create([Uri]$iconPath)
+    } catch {}
+}
+
+$window.Add_SourceInitialized({
+    try {
+        if (Test-Path -LiteralPath $iconPath) {
+            $icoObj = New-Object System.Drawing.Icon($iconPath)
+            $hwnd = (New-Object System.Windows.Interop.WindowInteropHelper($window)).Handle
+            [TaskbarIdentity]::SendMessage($hwnd, 0x0080, [IntPtr]1, $icoObj.Handle) | Out-Null # WM_SETICON ICON_BIG
+            [TaskbarIdentity]::SendMessage($hwnd, 0x0080, [IntPtr]0, $icoObj.Handle) | Out-Null # WM_SETICON ICON_SMALL
+        }
+    } catch {}
+})
+
 $window.Add_MouseLeftButtonDown({
     if ($_.ButtonState -eq [System.Windows.Input.MouseButtonState]::Pressed) {
         $window.DragMove()

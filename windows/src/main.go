@@ -4,11 +4,15 @@ import (
 	_ "embed"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"syscall"
 )
 
 //go:embed sweepurge_gui.ps1
 var embeddedScript []byte
+
+//go:embed icon.ico
+var embeddedIcon []byte
 
 func main() {
 	// Create temporary script file in user temp directory (with fallback)
@@ -22,6 +26,12 @@ func main() {
 	}
 	tempPath := tempFile.Name()
 	defer os.Remove(tempPath)
+
+	// Ensure SweePurge official icon is available in temp dir for taskbar binding
+	iconPath := filepath.Join(tempDir, "sweepurge_app.ico")
+	if len(embeddedIcon) > 0 {
+		_ = os.WriteFile(iconPath, embeddedIcon, 0644)
+	}
 
 	// Ensure UTF-8 BOM so PowerShell correctly parses all characters
 	bom := []byte{0xEF, 0xBB, 0xBF}
