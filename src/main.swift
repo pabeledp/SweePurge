@@ -12,16 +12,44 @@ class SweePurgeApp: NSObject, NSApplicationDelegate {
         let homeDir = FileManager.default.homeDirectoryForCurrentUser.path
         let appIcon = NSImage(contentsOfFile: Bundle.main.path(forResource: "AppIcon", ofType: "icns") ?? "") ?? NSApp.applicationIconImage
         
+        let hasFDA = checkFullDiskAccess(homeDir: homeDir)
+        
         // 1. Show Clean, Premium Confirmation Dialog
         let alert = NSAlert()
         alert.messageText = "SweePurge Storage Purger"
-        alert.informativeText = """
-        Ready to optimize your Mac and reclaim disk space?
+        
+        if hasFDA {
+            alert.informativeText = """
+            Ready to optimize your Mac and reclaim disk space?
 
-        Safely purges temporary caches, render scratch files, and system data bloat across 400+ creative apps, browsers, and developer tools.
+            Deep Junk Engine will purge:
+            • 400+ Apps Caches, Adobe Media Caches & Scratch Disks
+            • System Logs, Diagnostic Crash Reports & QuickLook Caches
+            • Saved Application States & Incomplete Downloads
+            • Time Machine Local Snapshots (Reclaims System Data)
 
-        • 100% Safe: Personal files, active projects, and login sessions remain untouched.
-        """
+            • 100% Safe: Personal files, active projects, credentials, and app licenses remain untouched.
+            """
+            alert.addButton(withTitle: "Clean All Caches Now")
+            alert.addButton(withTitle: "Cancel")
+        } else {
+            alert.informativeText = """
+            Ready to optimize your Mac and reclaim disk space?
+
+            Deep Junk Engine will purge:
+            • 400+ Apps Caches, Browser Caches & System Logs
+            • Saved Application States & Stale Downloads
+            • Time Machine Local Snapshots & Trash
+
+            Tip: Granting "Full Disk Access" enables deep cleaning of locked Adobe Media Caches and System Data.
+
+            • 100% Safe: Personal files, active projects, credentials, and app licenses remain untouched.
+            """
+            alert.addButton(withTitle: "Clean All Caches Now")
+            alert.addButton(withTitle: "Enable Full Disk Access")
+            alert.addButton(withTitle: "Cancel")
+        }
+        
         alert.alertStyle = .informational
         if let icon = appIcon {
             alert.icon = icon
@@ -30,11 +58,13 @@ class SweePurgeApp: NSObject, NSApplicationDelegate {
         // Center-aligned, 2-line subtle developer credit
         alert.accessoryView = createSubtleCreditView(width: 300)
         
-        alert.addButton(withTitle: "Clean All Caches Now")
-        alert.addButton(withTitle: "Cancel")
-        
         let response = alert.runModal()
-        if response != .alertFirstButtonReturn {
+        
+        if !hasFDA && response == .alertSecondButtonReturn {
+            // User chose to enable Full Disk Access
+            openFullDiskAccessSettings()
+            exit(0)
+        } else if response != .alertFirstButtonReturn {
             exit(0)
         }
         
@@ -42,7 +72,7 @@ class SweePurgeApp: NSObject, NSApplicationDelegate {
         let freeBefore = getFreeDiskSpaceBytes()
         
         // 3. Perform Deep Universal Cleanup
-        performUniversalCleanup(homeDir: homeDir)
+        performDeepUniversalCleanup(homeDir: homeDir)
         
         // 4. Measure Free Space After
         let freeAfter = getFreeDiskSpaceBytes()
@@ -65,7 +95,7 @@ class SweePurgeApp: NSObject, NSApplicationDelegate {
         • Storage Reclaimed: \(reclaimedFormatted)
         • Total Available Space: \(formatBytes(freeAfter))
 
-        Temporary caches, render scratch, and system snapshots have been safely purged.
+        Temporary caches, render scratch files, diagnostic logs, and system snapshots have been safely purged.
         """
         successAlert.alertStyle = .informational
         if let icon = appIcon {
@@ -76,6 +106,17 @@ class SweePurgeApp: NSObject, NSApplicationDelegate {
         successAlert.runModal()
         
         exit(0)
+    }
+    
+    func checkFullDiskAccess(homeDir: String) -> Bool {
+        let safariPath = "\(homeDir)/Library/Safari"
+        return (try? FileManager.default.contentsOfDirectory(atPath: safariPath)) != nil
+    }
+    
+    func openFullDiskAccessSettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles") {
+            NSWorkspace.shared.open(url)
+        }
     }
     
     func createSubtleCreditView(width: CGFloat) -> NSView {
@@ -130,14 +171,19 @@ class SweePurgeApp: NSObject, NSApplicationDelegate {
         return formatter.string(fromByteCount: bytes)
     }
     
-    func performUniversalCleanup(homeDir: String) {
+    func performDeepUniversalCleanup(homeDir: String) {
         let fm = FileManager.default
         
-        // 1. TIER 1: GLOBAL USER CACHE DIRECTORY
+        // ==========================================
+        // 1. TIER 1: GLOBAL USER & SYSTEM CACHES
+        // ==========================================
         cleanDirectoryContents("\(homeDir)/Library/Caches")
         cleanDirectoryContents("/Library/Caches")
         
-        // 2. TIER 2: ELECTRON & PRODUCTIVITY APPS
+        // ==========================================
+        // 2. TIER 2: ELECTRON & DESKTOP APP INTERNAL CACHES
+        // (Safely touches only cache folders, leaves login & settings 100% intact)
+        // ==========================================
         let appSupportDir = "\(homeDir)/Library/Application Support"
         if let apps = try? fm.contentsOfDirectory(atPath: appSupportDir) {
             let cacheFolderNames = [
@@ -154,7 +200,9 @@ class SweePurgeApp: NSObject, NSApplicationDelegate {
             }
         }
         
+        // ==========================================
         // 3. TIER 3: PRO VIDEO, 3D & AUDIO CREATIVE SUITES
+        // ==========================================
         let adobePaths = [
             "\(homeDir)/Library/Application Support/Adobe/Common/Media Cache Files",
             "\(homeDir)/Library/Application Support/Adobe/Common/Media Cache",
@@ -196,7 +244,9 @@ class SweePurgeApp: NSObject, NSApplicationDelegate {
         cleanDirectoryContents("\(homeDir)/Library/Application Support/Ableton/Live Database/Cache")
         cleanDirectoryContents("\(homeDir)/Music/Audio Music Apps/Freeze Files")
         
+        // ==========================================
         // 4. TIER 4: DEVELOPER & BUILD TOOLCHAINS
+        // ==========================================
         let devCaches = [
             "\(homeDir)/Library/Developer/Xcode/DerivedData",
             "\(homeDir)/Library/Developer/Xcode/Archives",
@@ -229,18 +279,32 @@ class SweePurgeApp: NSObject, NSApplicationDelegate {
         runProcess(path: "/usr/local/bin/docker", args: ["builder", "prune", "-f"])
         runProcess(path: "/opt/homebrew/bin/docker", args: ["builder", "prune", "-f"])
         
-        // 5. TIER 5: SYSTEM DATA, LOGS & SNAPSHOTS
+        // ==========================================
+        // 5. TIER 5: DEEP JUNK, SAVED STATES & STALE DOWNLOADS
+        // ==========================================
+        // Saved Application States (frozen background window caches)
+        cleanDirectoryContents("\(homeDir)/Library/Saved Application State")
+        
+        // Incomplete/stale downloads in ~/Downloads (*.crdownload, *.part, *.download)
+        cleanStaleIncompleteDownloads(in: "\(homeDir)/Downloads")
+        
+        // User & System Logs
         cleanDirectoryContents("\(homeDir)/Library/Logs")
         cleanDirectoryContents("/Library/Logs")
         cleanDirectoryContents("\(homeDir)/Library/Logs/DiagnosticReports")
         cleanDirectoryContents("/Library/Logs/DiagnosticReports")
         cleanDirectoryContents("\(homeDir)/Library/Application Support/CrashReporter")
+        
+        // Empty User Trash
         cleanDirectoryContents("\(homeDir)/.Trash")
         
+        // Time Machine Local Snapshots (APFS System Data bloat)
         purgeTimeMachineLocalSnapshots()
         
+        // Reset QuickLook Thumbnail cache & Font Database
         runProcess(path: "/usr/bin/qlmanage", args: ["-r", "cache"])
         runProcess(path: "/usr/bin/qlmanage", args: ["-r"])
+        runProcess(path: "/usr/bin/atsutil", args: ["databases", "-removeUser"])
     }
     
     func cleanDirectoryContents(_ path: String) {
@@ -267,6 +331,20 @@ class SweePurgeApp: NSObject, NSApplicationDelegate {
                 if fm.fileExists(atPath: target) {
                     cleanDirectoryContents(target)
                 }
+            }
+        }
+    }
+    
+    func cleanStaleIncompleteDownloads(in downloadsPath: String) {
+        let fm = FileManager.default
+        guard let files = try? fm.contentsOfDirectory(atPath: downloadsPath) else { return }
+        let incompleteExtensions = ["crdownload", "part", "download"]
+        
+        for file in files {
+            let ext = (file as NSString).pathExtension.lowercased()
+            if incompleteExtensions.contains(ext) {
+                let fullPath = (downloadsPath as NSString).appendingPathComponent(file)
+                try? fm.removeItem(atPath: fullPath)
             }
         }
     }

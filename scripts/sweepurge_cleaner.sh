@@ -6,7 +6,7 @@
 
 set -e
 
-echo "🧹 SweePurge: Starting Universal Storage Optimization..."
+echo "🧹 SweePurge: Starting Deep Universal Storage Optimization..."
 
 FREE_BEFORE=$(df -g / | awk 'NR==2 {print $4}')
 
@@ -91,7 +91,11 @@ if command -v brew >/dev/null 2>&1; then
     brew cleanup -s >/dev/null 2>&1 || true
 fi
 
-# 5. SYSTEM DATA, LOGS & SNAPSHOTS
+# 5. DEEP JUNK, SAVED STATES, DOWNLOADS & SNAPSHOTS
+echo "🧹 Purging Saved Application States & Stale Downloads..."
+rm -rf "$HOME/Library/Saved Application State/"* 2>/dev/null || true
+find "$HOME/Downloads" -type f \( -name "*.crdownload" -o -name "*.part" -o -name "*.download" \) -delete 2>/dev/null || true
+
 echo "🧹 Purging System Logs, QuickLook, Trash & Local Snapshots..."
 rm -rf "$HOME/Library/Logs/"* 2>/dev/null || true
 rm -rf "$HOME/Library/Logs/DiagnosticReports/"* 2>/dev/null || true
@@ -108,13 +112,14 @@ fi
 
 qlmanage -r cache >/dev/null 2>&1 || true
 qlmanage -r >/dev/null 2>&1 || true
+atsutil databases -removeUser 2>/dev/null || true
 
 FREE_AFTER=$(df -g / | awk 'NR==2 {print $4}')
 RECLAIMED=$((FREE_AFTER - FREE_BEFORE))
 if [ "$RECLAIMED" -lt 0 ]; then RECLAIMED=0; fi
 
 echo "=========================================="
-echo "🎉 Universal Cleanup Complete!"
+echo "🎉 Deep Universal Cleanup Complete!"
 echo "Reclaimed: ~${RECLAIMED} GB"
 echo "Free Disk Space: ${FREE_AFTER} GB"
 echo "=========================================="
