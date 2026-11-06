@@ -22,7 +22,7 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
     
     func setupUI() {
         let width: CGFloat = 460
-        let height: CGFloat = 450
+        let height: CGFloat = 460
         
         window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: width, height: height),
@@ -112,21 +112,32 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
         safetyLabel.isSelectable = false
         visualEffect.addSubview(safetyLabel)
         
-        // --- 6. FDA Helper Notice (if needed) ---
-        var currentY: CGFloat = height - 316
-        if !hasFDA {
-            let fdaBtn = NSButton(frame: NSRect(x: (width - 240) / 2, y: currentY, width: 240, height: 22))
-            fdaBtn.title = "⚠️ Deep Cleaning: Enable Full Disk Access"
-            fdaBtn.bezelStyle = .inline
-            fdaBtn.isBordered = false
-            fdaBtn.font = NSFont.systemFont(ofSize: 10.5, weight: .medium)
-            fdaBtn.contentTintColor = NSColor.systemOrange
-            fdaBtn.target = self
-            fdaBtn.action = #selector(openFDA)
-            visualEffect.addSubview(fdaBtn)
-            currentY -= 30
+        // --- 6. Deep Cleaning Pill Button / Status Badge ---
+        let deepPillWidth: CGFloat = 200
+        let deepPillHeight: CGFloat = 24
+        let deepPillY = height - 318
+        
+        if hasFDA {
+            let activeBadge = NSTextField(frame: NSRect(x: (width - deepPillWidth) / 2, y: deepPillY, width: deepPillWidth, height: deepPillHeight))
+            activeBadge.stringValue = "✓ Deep Cleaning Active"
+            activeBadge.font = NSFont.systemFont(ofSize: 11, weight: .semibold)
+            activeBadge.textColor = NSColor.systemGreen
+            activeBadge.alignment = .center
+            activeBadge.isBezeled = false
+            activeBadge.drawsBackground = false
+            activeBadge.isEditable = false
+            activeBadge.isSelectable = false
+            visualEffect.addSubview(activeBadge)
         } else {
-            currentY -= 10
+            let deepBtn = NSButton(frame: NSRect(x: (width - deepPillWidth) / 2, y: deepPillY, width: deepPillWidth, height: deepPillHeight))
+            deepBtn.title = "⚡ Deep Cleaning Mode"
+            deepBtn.bezelStyle = .inline
+            deepBtn.isBordered = false
+            deepBtn.font = NSFont.systemFont(ofSize: 11, weight: .semibold)
+            deepBtn.contentTintColor = NSColor.controlAccentColor
+            deepBtn.target = self
+            deepBtn.action = #selector(deepCleaningClicked)
+            visualEffect.addSubview(deepBtn)
         }
         
         // --- 7. Buttons (Cleanly Spaced & Sized) ---
@@ -134,18 +145,19 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
         let btnHeight: CGFloat = 32
         let totalBtnWidth = (btnWidth * 2) + 14
         let btnStartX = (width - totalBtnWidth) / 2
+        let btnY: CGFloat = 64
         
-        let cancelBtn = NSButton(frame: NSRect(x: btnStartX, y: currentY, width: btnWidth, height: btnHeight))
+        let cancelBtn = NSButton(frame: NSRect(x: btnStartX, y: btnY, width: btnWidth, height: btnHeight))
         cancelBtn.title = "Cancel"
         cancelBtn.bezelStyle = .rounded
         cancelBtn.target = self
         cancelBtn.action = #selector(cancelClicked)
         visualEffect.addSubview(cancelBtn)
         
-        let cleanBtn = NSButton(frame: NSRect(x: btnStartX + btnWidth + 14, y: currentY, width: btnWidth, height: btnHeight))
+        let cleanBtn = NSButton(frame: NSRect(x: btnStartX + btnWidth + 14, y: btnY, width: btnWidth, height: btnHeight))
         cleanBtn.title = "Clean All Caches Now"
         cleanBtn.bezelStyle = .rounded
-        cleanBtn.keyEquivalent = "\r" // Enter key default
+        cleanBtn.keyEquivalent = "\r"
         cleanBtn.contentTintColor = NSColor.controlAccentColor
         cleanBtn.target = self
         cleanBtn.action = #selector(cleanClicked)
@@ -184,9 +196,32 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
     
-    @objc func openFDA() {
-        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles") {
-            NSWorkspace.shared.open(url)
+    @objc func deepCleaningClicked() {
+        let alert = NSAlert()
+        alert.messageText = "Enable Deep Cleaning"
+        alert.informativeText = """
+        Deep Cleaning allows SweePurge to unlock 20-50+ GB of protected storage:
+        • Deep Adobe Media Caches & Scratch Disks
+        • Hidden Time Machine Local Snapshots (System Data)
+        • Diagnostic Crash Reports & System Logs
+
+        To enable this, macOS requires Full Disk Access:
+        1. Click "Open Settings" below.
+        2. Toggle the switch ON for SweePurge.
+        3. Return to SweePurge for full storage recovery!
+        """
+        alert.alertStyle = .informational
+        if let icon = appIcon {
+            alert.icon = icon
+        }
+        alert.addButton(withTitle: "Open Settings")
+        alert.addButton(withTitle: "Cancel")
+        
+        let res = alert.runModal()
+        if res == .alertFirstButtonReturn {
+            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles") {
+                NSWorkspace.shared.open(url)
+            }
         }
     }
     
