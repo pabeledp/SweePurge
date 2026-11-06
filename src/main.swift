@@ -36,7 +36,7 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
         window.isMovableByWindowBackground = true
         window.center()
         
-        // Frosted Glass Vibrancy Background
+        // Native Frosted Glass Background
         let visualEffect = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: width, height: height))
         visualEffect.blendingMode = .behindWindow
         visualEffect.state = .active
@@ -44,15 +44,15 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
         window.contentView = visualEffect
         
         // --- 1. App Icon ---
-        let iconView = NSImageView(frame: NSRect(x: (width - 68) / 2, y: height - 90, width: 68, height: 68))
+        let iconView = NSImageView(frame: NSRect(x: (width - 64) / 2, y: height - 86, width: 64, height: 64))
         iconView.image = appIcon
         iconView.imageScaling = .scaleProportionallyUpOrDown
         visualEffect.addSubview(iconView)
         
         // --- 2. Title ---
-        let titleLabel = NSTextField(frame: NSRect(x: 20, y: height - 124, width: width - 40, height: 26))
+        let titleLabel = NSTextField(frame: NSRect(x: 20, y: height - 118, width: width - 40, height: 24))
         titleLabel.stringValue = "SweePurge"
-        titleLabel.font = NSFont.systemFont(ofSize: 20, weight: .bold)
+        titleLabel.font = NSFont.systemFont(ofSize: 19, weight: .bold)
         titleLabel.alignment = .center
         titleLabel.isBezeled = false
         titleLabel.drawsBackground = false
@@ -61,9 +61,9 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
         visualEffect.addSubview(titleLabel)
         
         // --- 3. Subtitle ---
-        let subtitleLabel = NSTextField(frame: NSRect(x: 20, y: height - 146, width: width - 40, height: 18))
+        let subtitleLabel = NSTextField(frame: NSRect(x: 20, y: height - 138, width: width - 40, height: 16))
         subtitleLabel.stringValue = "Universal Mac Storage & Cache Purger"
-        subtitleLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        subtitleLabel.font = NSFont.systemFont(ofSize: 12, weight: .regular)
         subtitleLabel.textColor = NSColor.secondaryLabelColor
         subtitleLabel.alignment = .center
         subtitleLabel.isBezeled = false
@@ -72,16 +72,15 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
         subtitleLabel.isSelectable = false
         visualEffect.addSubview(subtitleLabel)
         
-        // --- 4. Feature Card (Centered Box) ---
+        // --- 4. Feature Box (Simple, Zero Stroke / Border) ---
         let cardWidth = width - 60
-        let cardHeight: CGFloat = 100
-        let cardY = height - 258
+        let cardHeight: CGFloat = 96
+        let cardY = height - 250
         let cardView = NSBox(frame: NSRect(x: 30, y: cardY, width: cardWidth, height: cardHeight))
         cardView.boxType = .custom
-        cardView.borderColor = NSColor.separatorColor.withAlphaComponent(0.2)
-        cardView.borderWidth = 1
-        cardView.cornerRadius = 10
-        cardView.fillColor = NSColor.controlBackgroundColor.withAlphaComponent(0.4)
+        cardView.borderWidth = 0 // No stroke
+        cardView.cornerRadius = 8
+        cardView.fillColor = NSColor.controlBackgroundColor.withAlphaComponent(0.35)
         
         let features = [
             "• 400+ Apps Caches, Adobe Media Scratch & Dev Artifacts",
@@ -89,7 +88,7 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
             "• Saved Application States, Stale Downloads & Trash"
         ]
         
-        let cardContent = NSTextField(frame: NSRect(x: 16, y: 12, width: cardWidth - 32, height: cardHeight - 24))
+        let cardContent = NSTextField(frame: NSRect(x: 16, y: 10, width: cardWidth - 32, height: cardHeight - 20))
         cardContent.stringValue = features.joined(separator: "\n\n")
         cardContent.font = NSFont.systemFont(ofSize: 11.5, weight: .regular)
         cardContent.textColor = NSColor.labelColor
@@ -100,11 +99,11 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
         cardView.addSubview(cardContent)
         visualEffect.addSubview(cardView)
         
-        // --- 5. Safety Indicator ---
-        let safetyLabel = NSTextField(frame: NSRect(x: 30, y: height - 286, width: width - 60, height: 18))
-        safetyLabel.stringValue = "✓ 100% Safe: Personal files, active projects & app licenses untouched"
-        safetyLabel.font = NSFont.systemFont(ofSize: 10.5, weight: .medium)
-        safetyLabel.textColor = NSColor.systemGreen
+        // --- 5. Safety Indicator (Simple Monochrome, No Bright Green) ---
+        let safetyLabel = NSTextField(frame: NSRect(x: 30, y: height - 274, width: width - 60, height: 16))
+        safetyLabel.stringValue = "100% Safe: Personal files, active projects & licenses untouched"
+        safetyLabel.font = NSFont.systemFont(ofSize: 10.5, weight: .regular)
+        safetyLabel.textColor = NSColor.secondaryLabelColor
         safetyLabel.alignment = .center
         safetyLabel.isBezeled = false
         safetyLabel.drawsBackground = false
@@ -112,44 +111,29 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
         safetyLabel.isSelectable = false
         visualEffect.addSubview(safetyLabel)
         
-        // --- 6. Deep Cleaning Pill Button / Status Badge ---
-        let deepPillWidth: CGFloat = 200
-        let deepPillHeight: CGFloat = 24
-        let deepPillY = height - 318
+        // --- 6. Deep Cleaning Button (Standard macOS Rounded Button Shape, Placed Right Above Other Buttons) ---
+        let deepBtnWidth: CGFloat = 220
+        let deepBtnHeight: CGFloat = 30
+        let deepBtnY: CGFloat = 112
+        let deepBtn = NSButton(frame: NSRect(x: (width - deepBtnWidth) / 2, y: deepBtnY, width: deepBtnWidth, height: deepBtnHeight))
+        deepBtn.title = hasFDA ? "Deep Cleaning: Active" : "Deep Cleaning Mode"
+        deepBtn.bezelStyle = .rounded
+        deepBtn.font = NSFont.systemFont(ofSize: 11.5, weight: .regular)
+        deepBtn.target = self
+        deepBtn.action = #selector(deepCleaningClicked)
+        visualEffect.addSubview(deepBtn)
         
-        if hasFDA {
-            let activeBadge = NSTextField(frame: NSRect(x: (width - deepPillWidth) / 2, y: deepPillY, width: deepPillWidth, height: deepPillHeight))
-            activeBadge.stringValue = "✓ Deep Cleaning Active"
-            activeBadge.font = NSFont.systemFont(ofSize: 11, weight: .semibold)
-            activeBadge.textColor = NSColor.systemGreen
-            activeBadge.alignment = .center
-            activeBadge.isBezeled = false
-            activeBadge.drawsBackground = false
-            activeBadge.isEditable = false
-            activeBadge.isSelectable = false
-            visualEffect.addSubview(activeBadge)
-        } else {
-            let deepBtn = NSButton(frame: NSRect(x: (width - deepPillWidth) / 2, y: deepPillY, width: deepPillWidth, height: deepPillHeight))
-            deepBtn.title = "⚡ Deep Cleaning Mode"
-            deepBtn.bezelStyle = .inline
-            deepBtn.isBordered = false
-            deepBtn.font = NSFont.systemFont(ofSize: 11, weight: .semibold)
-            deepBtn.contentTintColor = NSColor.controlAccentColor
-            deepBtn.target = self
-            deepBtn.action = #selector(deepCleaningClicked)
-            visualEffect.addSubview(deepBtn)
-        }
-        
-        // --- 7. Buttons (Cleanly Spaced & Sized) ---
+        // --- 7. Main Action Buttons ---
         let btnWidth: CGFloat = 160
         let btnHeight: CGFloat = 32
         let totalBtnWidth = (btnWidth * 2) + 14
         let btnStartX = (width - totalBtnWidth) / 2
-        let btnY: CGFloat = 64
+        let btnY: CGFloat = 68
         
         let cancelBtn = NSButton(frame: NSRect(x: btnStartX, y: btnY, width: btnWidth, height: btnHeight))
         cancelBtn.title = "Cancel"
         cancelBtn.bezelStyle = .rounded
+        cancelBtn.font = NSFont.systemFont(ofSize: 12, weight: .regular)
         cancelBtn.target = self
         cancelBtn.action = #selector(cancelClicked)
         visualEffect.addSubview(cancelBtn)
@@ -158,12 +142,12 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
         cleanBtn.title = "Clean All Caches Now"
         cleanBtn.bezelStyle = .rounded
         cleanBtn.keyEquivalent = "\r"
-        cleanBtn.contentTintColor = NSColor.controlAccentColor
+        cleanBtn.font = NSFont.systemFont(ofSize: 12, weight: .medium)
         cleanBtn.target = self
         cleanBtn.action = #selector(cleanClicked)
         visualEffect.addSubview(cleanBtn)
         
-        // --- 8. Footer Developer Credit (Perfect Absolute Center) ---
+        // --- 8. Footer Developer Credit (Centered at Bottom) ---
         let creditContainer = NSView(frame: NSRect(x: 0, y: 12, width: width, height: 32))
         
         let creditLine1 = NSTextField(frame: NSRect(x: 0, y: 16, width: width, height: 14))
@@ -198,7 +182,7 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
     
     @objc func deepCleaningClicked() {
         let alert = NSAlert()
-        alert.messageText = "Enable Deep Cleaning"
+        alert.messageText = "Deep Cleaning Mode"
         alert.informativeText = """
         Deep Cleaning allows SweePurge to unlock 20-50+ GB of protected storage:
         • Deep Adobe Media Caches & Scratch Disks
@@ -208,7 +192,7 @@ class SweePurgeWindowController: NSObject, NSWindowDelegate {
         To enable this, macOS requires Full Disk Access:
         1. Click "Open Settings" below.
         2. Toggle the switch ON for SweePurge.
-        3. Return to SweePurge for full storage recovery!
+        3. Return to SweePurge for full storage recovery.
         """
         alert.alertStyle = .informational
         if let icon = appIcon {
@@ -260,7 +244,7 @@ class SweePurgeEngine {
     
     static func showSuccessDialog(reclaimed: String, freeTotal: String, appIcon: NSImage?) {
         let width: CGFloat = 420
-        let height: CGFloat = 310
+        let height: CGFloat = 300
         
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: width, height: height),
@@ -284,7 +268,7 @@ class SweePurgeEngine {
         iconView.imageScaling = .scaleProportionallyUpOrDown
         visualEffect.addSubview(iconView)
         
-        let titleLabel = NSTextField(frame: NSRect(x: 20, y: height - 108, width: width - 40, height: 24))
+        let titleLabel = NSTextField(frame: NSRect(x: 20, y: height - 106, width: width - 40, height: 24))
         titleLabel.stringValue = "Optimization Complete"
         titleLabel.font = NSFont.systemFont(ofSize: 18, weight: .bold)
         titleLabel.alignment = .center
@@ -293,7 +277,7 @@ class SweePurgeEngine {
         titleLabel.isEditable = false
         visualEffect.addSubview(titleLabel)
         
-        let infoLabel = NSTextField(frame: NSRect(x: 30, y: height - 180, width: width - 60, height: 60))
+        let infoLabel = NSTextField(frame: NSRect(x: 30, y: height - 176, width: width - 60, height: 56))
         infoLabel.stringValue = """
         SweePurge has successfully cleaned your Mac.
 
