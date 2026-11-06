@@ -1,6 +1,6 @@
-# SweePurge Windows Edition - Universal Storage & Cache Purger
+﻿# SweePurge Windows Edition - Universal Storage & Cache Purger
 # Developed by A M Pabel, Team Captain at FramEmpire
-Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase
+Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase, System.Windows.Forms, System.Drawing
 
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
@@ -23,8 +23,36 @@ $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIden
             <!-- Window Header / Controls -->
             <Grid Grid.Row="0">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <Button Name="btnMinimize" Content="−" Width="28" Height="24" Background="Transparent" Foreground="#888892" BorderThickness="0" FontSize="14" Cursor="Hand"/>
-                    <Button Name="btnClose" Content="✕" Width="28" Height="24" Background="Transparent" Foreground="#888892" BorderThickness="0" FontSize="11" Cursor="Hand" Margin="4,0,0,0"/>
+                    <Button Name="btnMinimize" Width="30" Height="24" Cursor="Hand" Margin="0,0,4,0">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Name="border" CornerRadius="5" Background="Transparent">
+                                    <TextBlock Text="&#x2212;" FontSize="14" FontWeight="SemiBold" Foreground="#888892" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-2,0,0"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="border" Property="Background" Value="#2D2D36"/>
+                                        <Setter Property="Foreground" Value="#FFFFFF"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                    <Button Name="btnClose" Width="30" Height="24" Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Name="border" CornerRadius="5" Background="Transparent">
+                                    <TextBlock Text="&#x2715;" FontSize="11" FontWeight="Bold" Foreground="#888892" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="border" Property="Background" Value="#E81123"/>
+                                        <Setter Property="Foreground" Value="#FFFFFF"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
                 </StackPanel>
             </Grid>
 
@@ -41,9 +69,9 @@ $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIden
                 <StackPanel Name="panelInitial" VerticalAlignment="Center">
                     <Border CornerRadius="8" Background="#222228" Padding="14,12" Margin="0,0,0,12">
                         <StackPanel>
-                            <TextBlock Text="• 400+ Apps Caches, Adobe Media Scratch &amp; Dev Artifacts" FontSize="11.5" Foreground="#E0E0E6" Margin="0,0,0,6"/>
-                            <TextBlock Text="• Windows System Temp, Prefetch, WER &amp; Update Caches" FontSize="11.5" Foreground="#E0E0E6" Margin="0,0,0,6"/>
-                            <TextBlock Text="• Saved Application States, Crash Dumps &amp; Recycle Bin" FontSize="11.5" Foreground="#E0E0E6"/>
+                            <TextBlock Text="&#x2022; 400+ Apps Caches, Adobe Media Scratch &amp; Dev Artifacts" FontSize="11.5" Foreground="#E0E0E6" Margin="0,0,0,6"/>
+                            <TextBlock Text="&#x2022; Windows System Temp, Prefetch, WER &amp; Update Caches" FontSize="11.5" Foreground="#E0E0E6" Margin="0,0,0,6"/>
+                            <TextBlock Text="&#x2022; Saved Application States, Crash Dumps &amp; Recycle Bin" FontSize="11.5" Foreground="#E0E0E6"/>
                         </StackPanel>
                     </Border>
 
@@ -124,8 +152,8 @@ $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIden
                     <Border CornerRadius="8" Background="#222228" Padding="18,16" Margin="10,0,10,18">
                         <StackPanel HorizontalAlignment="Center">
                             <TextBlock Text="SweePurge has successfully cleaned your PC." FontSize="12.5" Foreground="#D0D0DC" HorizontalAlignment="Center" Margin="0,0,0,10"/>
-                            <TextBlock Name="txtReclaimed" Text="• Storage Reclaimed: 0 GB" FontSize="12" Foreground="#FFFFFF" HorizontalAlignment="Center" Margin="0,0,0,4"/>
-                            <TextBlock Name="txtFreeTotal" Text="• Total Available Disk Space: 0 GB" FontSize="12" Foreground="#A0A0AC" HorizontalAlignment="Center"/>
+                            <TextBlock Name="txtReclaimed" Text="&#x2022; Storage Reclaimed: 0 GB" FontSize="12" Foreground="#FFFFFF" HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                            <TextBlock Name="txtFreeTotal" Text="&#x2022; Total Available Disk Space: 0 GB" FontSize="12" Foreground="#A0A0AC" HorizontalAlignment="Center"/>
                         </StackPanel>
                     </Border>
 
@@ -203,6 +231,7 @@ $txtFreeTotal = $window.FindName("txtFreeTotal")
 
 if ($isAdmin) {
     $txtDeepCleanBtn.Text = "Deep Cleaning: Active"
+    $txtDeepCleanBtn.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#4CC2FF")
 }
 
 $btnMinimize.Add_Click({ $window.WindowState = [System.Windows.WindowState]::Minimized })
@@ -215,9 +244,9 @@ $btnDeepClean.Add_Click({
     if (-not $isAdmin) {
         $res = [System.Windows.MessageBox]::Show(
             "Deep Cleaning allows SweePurge to unlock 20-50+ GB of protected Windows storage:`n" +
-            "• Windows Update Download Cache (SoftwareDistribution)`n" +
-            "• Windows Prefetch Files`n" +
-            "• System Temp Directory`n`n" +
+            ([char]0x2022) + " Windows Update Download Cache (SoftwareDistribution)`n" +
+            ([char]0x2022) + " Windows Prefetch Files`n" +
+            ([char]0x2022) + " System Temp Directory`n`n" +
             "To enable this, Administrator privileges are required.`n`n" +
             "Would you like to restart SweePurge as Administrator?",
             "Deep Cleaning Mode",
@@ -256,17 +285,29 @@ function Get-DriveFreeSpace() {
     return 0
 }
 
+function Invoke-UIUpdate {
+    try { Invoke-UIUpdate } catch {}
+    try {
+        $frame = New-Object System.Windows.Threading.DispatcherFrame
+        [System.Windows.Threading.Dispatcher]::CurrentDispatcher.BeginInvoke(
+            [System.Windows.Threading.DispatcherPriority]::Background,
+            [Action]{ $frame.Continue = $false }
+        ) | Out-Null
+        [System.Windows.Threading.Dispatcher]::PushFrame($frame)
+    } catch {}
+}
+
 # Throttled Path Reporter
 $global:lastUpdate = [DateTime]::MinValue
 function Update-ProgressUI([string]$stage, [string]$path) {
     $now = [DateTime]::Now
-    if (($now - $global:lastUpdate).TotalMilliseconds -ge 50 -or $path -eq "") {
+    if (($now - $global:lastUpdate).TotalMilliseconds -ge 40 -or $path -eq "") {
         $global:lastUpdate = $now
         $txtStage.Text = $stage
         if ($path -ne "") {
             $txtPath.Text = $path
         }
-        [System.Windows.Forms.Application]::DoEvents()
+        Invoke-UIUpdate
     }
 }
 
@@ -289,7 +330,7 @@ $btnClean.Add_Click({
     $panelInitial.Visibility = [System.Windows.Visibility]::Collapsed
     $panelProgress.Visibility = [System.Windows.Visibility]::Visible
     $txtSubtitle.Text = "Optimizing Windows Storage..."
-    [System.Windows.Forms.Application]::DoEvents()
+    Invoke-UIUpdate
 
     $freeBefore = Get-DriveFreeSpace
 
@@ -409,8 +450,8 @@ $btnClean.Add_Click({
     $panelComplete.Visibility = [System.Windows.Visibility]::Visible
     $txtSubtitle.Text = "Optimization Complete"
 
-    $txtReclaimed.Text = "• Storage Reclaimed: " + (Format-Bytes $reclaimedBytes)
-    $txtFreeTotal.Text = "• Total Available Disk Space: " + (Format-Bytes $freeAfter)
+    $txtReclaimed.Text = ([char]0x2022) + " Storage Reclaimed: " + (Format-Bytes $reclaimedBytes)
+    $txtFreeTotal.Text = ([char]0x2022) + " Total Available Disk Space: " + (Format-Bytes $freeAfter)
 })
 
 $window.ShowDialog() | Out-Null

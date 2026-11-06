@@ -8,16 +8,40 @@ import (
 )
 
 //go:embed sweepurge_gui.ps1
-var embeddedScript string
+var embeddedScript []byte
 
 func main() {
-	cmd := exec.Command("powershell.exe",
+	// Create temporary script file in user temp directory (with fallback)
+	tempDir := os.TempDir()
+	tempFile, err := os.CreateTemp(tempDir, "sweepurge_*.ps1")
+	if err != nil {
+		tempFile, err = os.CreateTemp(".", "sweepurge_*.ps1")
+		if err != nil {
+			return
+		}
+	}
+	tempPath := tempFile.Name()
+	defer os.Remove(tempPath)
+
+	// Ensure UTF-8 BOM so PowerShell correctly parses all characters
+	bom := []byte{0xEF, 0xBB, 0xBF}
+	if len(embeddedScript) < 3 || embeddedScript[0] != 0xEF || embeddedScript[1] != 0xBB || embeddedScript[2] != 0xBF {
+		_, _ = tempFile.Write(bom)
+	}
+	_, _ = tempFile.Write(embeddedScript)
+	_ = tempFile.Close()
+
+	// Launch PowerShell executing the temporary script file
+	args := []string{
 		"-NoProfile",
-		"-NonInteractive",
-		"-WindowStyle", "Hidden",
 		"-ExecutionPolicy", "Bypass",
-		"-Command", embeddedScript,
-	)
+		"-File", tempPath,
+	}
+	if len(os.Args) > 1 {
+		args = append(args, os.Args[1:]...)
+	}
+
+	cmd := exec.Command("powershell.exe", args...)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		HideWindow:    true,
 		CreationFlags: 0x08000000, // CREATE_NO_WINDOW
