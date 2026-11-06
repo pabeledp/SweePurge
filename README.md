@@ -3,29 +3,36 @@
 <img src="assets/icon_1024.png" width="120" height="120" alt="SweePurge Logo" style="border-radius: 26px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);"/>
 
 # SweePurge
-### 1-Click Universal System Storage & App Cache Purger for macOS
+### 1-Click Universal System Storage & App Cache Purger for macOS & Windows
 
 [![macOS](https://img.shields.io/badge/macOS-10.15%2B%20Universal-000000?style=flat-square&logo=apple&logoColor=white)](https://apple.com)
-[![Swift](https://img.shields.io/badge/Language-Swift%205-FA7343?style=flat-square&logo=swift&logoColor=white)](https://swift.org)
+[![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011%20(64--bit)-0078D4?style=flat-square&logo=windows&logoColor=white)](https://microsoft.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.flat-square)](LICENSE)
 [![Release](https://img.shields.io/badge/Version-2.0.1-emerald?style=flat-square)](https://github.com/pabeledp/SweePurge/releases)
 
 <p align="center">
-  <b>Tired of Mac's mysterious "System Data" and giant software caches eating all your disk space?</b><br/>
+  <b>Tired of mysterious "System Data" and giant software caches eating all your disk space?</b><br/>
   SweePurge instantly purges gigabytes of caches across <b>400+ professional creative suites, browsers, IDEs, and system bloat</b> in 1-Click.
 </p>
 
 ---
 
-### <img src="assets/icons/download.svg" width="20" height="20" align="center" /> Download SweePurge for Mac
+### <img src="assets/icons/download.svg" width="20" height="20" align="center" /> Download SweePurge
 
-<a href="https://github.com/pabeledp/SweePurge/raw/main/SweePurge.dmg">
-  <img src="https://custom-icon-badges.demolab.com/badge/DOWNLOAD-SweePurge.dmg%20(Universal%20Install)-007AFF?style=for-the-badge&logo=download&logoColor=white" height="48" alt="Download SweePurge"/>
-</a>
+<p align="center">
+  <a href="https://github.com/pabeledp/SweePurge/raw/main/SweePurge.dmg">
+    <img src="https://custom-icon-badges.demolab.com/badge/DOWNLOAD-macOS%20(.dmg)-007AFF?style=for-the-badge&logo=apple&logoColor=white" height="46" alt="Download SweePurge for macOS"/>
+  </a>
+  &nbsp;&nbsp;
+  <a href="https://github.com/pabeledp/SweePurge/raw/main/SweePurge.exe">
+    <img src="https://custom-icon-badges.demolab.com/badge/DOWNLOAD-Windows%20(.exe)-0078D4?style=for-the-badge&logo=windows&logoColor=white" height="46" alt="Download SweePurge for Windows"/>
+  </a>
+</p>
 
-<br/>
-
-<sub>Universal 2 Binary (Apple Silicon M1–M5 + Intel) • macOS 10.15 Catalina to macOS 27+ • Size: ~1.1 MB</sub>
+<sub>
+  <b>macOS</b>: Universal 2 Binary (M1–M5 + Intel) • macOS 10.15 to macOS 27+ • ~1.0 MB<br/>
+  <b>Windows</b>: Standalone Portable Executable • Windows 10 &amp; 11 (64-bit) • ~1.8 MB
+</sub>
 
 ---
 
