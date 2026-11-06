@@ -15,23 +15,29 @@ var embeddedScript []byte
 var embeddedIcon []byte
 
 func main() {
-	// Create temporary script file in user temp directory (with fallback)
-	tempDir := os.TempDir()
-	tempFile, err := os.CreateTemp(tempDir, "sweepurge_*.ps1")
+	// 1. Ensure dedicated SweePurge AppData directory for persistent icon & assets
+	localAppData := os.Getenv("LOCALAPPDATA")
+	if localAppData == "" {
+		localAppData = os.TempDir()
+	}
+	appDir := filepath.Join(localAppData, "SweePurge")
+	_ = os.MkdirAll(appDir, 0755)
+
+	iconPath := filepath.Join(appDir, "sweepurge_app.ico")
+	if len(embeddedIcon) > 0 {
+		_ = os.WriteFile(iconPath, embeddedIcon, 0644)
+	}
+
+	// 2. Create temporary script file
+	tempFile, err := os.CreateTemp(appDir, "sweepurge_*.ps1")
 	if err != nil {
-		tempFile, err = os.CreateTemp(".", "sweepurge_*.ps1")
+		tempFile, err = os.CreateTemp(os.TempDir(), "sweepurge_*.ps1")
 		if err != nil {
 			return
 		}
 	}
 	tempPath := tempFile.Name()
 	defer os.Remove(tempPath)
-
-	// Ensure SweePurge official icon is available in temp dir for taskbar binding
-	iconPath := filepath.Join(tempDir, "sweepurge_app.ico")
-	if len(embeddedIcon) > 0 {
-		_ = os.WriteFile(iconPath, embeddedIcon, 0644)
-	}
 
 	// Ensure UTF-8 BOM so PowerShell correctly parses all characters
 	bom := []byte{0xEF, 0xBB, 0xBF}
@@ -41,7 +47,7 @@ func main() {
 	_, _ = tempFile.Write(embeddedScript)
 	_ = tempFile.Close()
 
-	// Launch PowerShell executing the temporary script file
+	// 3. Launch PowerShell executing the temporary script file
 	args := []string{
 		"-NoProfile",
 		"-ExecutionPolicy", "Bypass",
