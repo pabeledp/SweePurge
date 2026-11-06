@@ -1,155 +1,313 @@
 import Cocoa
 import Foundation
 
-class SweePurgeApp: NSObject, NSApplicationDelegate {
+class SweePurgeWindowController: NSObject, NSWindowDelegate {
+    var window: NSWindow!
+    var homeDir: String
+    var appIcon: NSImage?
+    var hasFDA: Bool = false
     
-    func applicationDidFinishLaunching(_ notification: Notification) {
-        NSApp.activate(ignoringOtherApps: true)
-        runWorkflow()
+    init(homeDir: String, appIcon: NSImage?) {
+        self.homeDir = homeDir
+        self.appIcon = appIcon
+        super.init()
+        self.hasFDA = checkFullDiskAccess()
+        setupUI()
     }
     
-    func runWorkflow() {
-        let homeDir = FileManager.default.homeDirectoryForCurrentUser.path
-        let appIcon = NSImage(contentsOfFile: Bundle.main.path(forResource: "AppIcon", ofType: "icns") ?? "") ?? NSApp.applicationIconImage
-        
-        let hasFDA = checkFullDiskAccess(homeDir: homeDir)
-        
-        // 1. Show Clean, Premium Confirmation Dialog
-        let alert = NSAlert()
-        alert.messageText = "SweePurge Storage Purger"
-        
-        if hasFDA {
-            alert.informativeText = """
-            Ready to optimize your Mac and reclaim disk space?
-
-            Deep Junk Engine will purge:
-            • 400+ Apps Caches, Adobe Media Caches & Scratch Disks
-            • System Logs, Diagnostic Crash Reports & QuickLook Caches
-            • Saved Application States & Incomplete Downloads
-            • Time Machine Local Snapshots (Reclaims System Data)
-
-            • 100% Safe: Personal files, active projects, credentials, and app licenses remain untouched.
-            """
-            alert.addButton(withTitle: "Clean All Caches Now")
-            alert.addButton(withTitle: "Cancel")
-        } else {
-            alert.informativeText = """
-            Ready to optimize your Mac and reclaim disk space?
-
-            Deep Junk Engine will purge:
-            • 400+ Apps Caches, Browser Caches & System Logs
-            • Saved Application States & Stale Downloads
-            • Time Machine Local Snapshots & Trash
-
-            Tip: Granting "Full Disk Access" enables deep cleaning of locked Adobe Media Caches and System Data.
-
-            • 100% Safe: Personal files, active projects, credentials, and app licenses remain untouched.
-            """
-            alert.addButton(withTitle: "Clean All Caches Now")
-            alert.addButton(withTitle: "Enable Full Disk Access")
-            alert.addButton(withTitle: "Cancel")
-        }
-        
-        alert.alertStyle = .informational
-        if let icon = appIcon {
-            alert.icon = icon
-        }
-        
-        // Center-aligned, 2-line subtle developer credit
-        alert.accessoryView = createSubtleCreditView(width: 300)
-        
-        let response = alert.runModal()
-        
-        if !hasFDA && response == .alertSecondButtonReturn {
-            // User chose to enable Full Disk Access
-            openFullDiskAccessSettings()
-            exit(0)
-        } else if response != .alertFirstButtonReturn {
-            exit(0)
-        }
-        
-        // 2. Measure Free Space Before
-        let freeBefore = getFreeDiskSpaceBytes()
-        
-        // 3. Perform Deep Universal Cleanup
-        performDeepUniversalCleanup(homeDir: homeDir)
-        
-        // 4. Measure Free Space After
-        let freeAfter = getFreeDiskSpaceBytes()
-        
-        let reclaimedBytes = max(0, freeAfter - freeBefore)
-        let reclaimedFormatted = formatBytes(reclaimedBytes)
-        
-        // 5. Native Notification
-        sendNotification(
-            title: "SweePurge: Mac Optimized",
-            message: "Reclaimed \(reclaimedFormatted) across 400+ apps & system storage."
-        )
-        
-        // 6. Clean Success Modal
-        let successAlert = NSAlert()
-        successAlert.messageText = "Mac Optimized"
-        successAlert.informativeText = """
-        SweePurge has successfully cleaned your system.
-
-        • Storage Reclaimed: \(reclaimedFormatted)
-        • Total Available Space: \(formatBytes(freeAfter))
-
-        Temporary caches, render scratch files, diagnostic logs, and system snapshots have been safely purged.
-        """
-        successAlert.alertStyle = .informational
-        if let icon = appIcon {
-            successAlert.icon = icon
-        }
-        successAlert.accessoryView = createSubtleCreditView(width: 300)
-        successAlert.addButton(withTitle: "Done")
-        successAlert.runModal()
-        
-        exit(0)
-    }
-    
-    func checkFullDiskAccess(homeDir: String) -> Bool {
+    func checkFullDiskAccess() -> Bool {
         let safariPath = "\(homeDir)/Library/Safari"
         return (try? FileManager.default.contentsOfDirectory(atPath: safariPath)) != nil
     }
     
-    func openFullDiskAccessSettings() {
+    func setupUI() {
+        let width: CGFloat = 460
+        let height: CGFloat = 450
+        
+        window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: width, height: height),
+            styleMask: [.titled, .closable, .fullSizeContentView],
+            backing: .buffered,
+            defer: false
+        )
+        window.delegate = self
+        window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
+        window.isMovableByWindowBackground = true
+        window.center()
+        
+        // Frosted Glass Vibrancy Background
+        let visualEffect = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: width, height: height))
+        visualEffect.blendingMode = .behindWindow
+        visualEffect.state = .active
+        visualEffect.material = .popover
+        window.contentView = visualEffect
+        
+        // --- 1. App Icon ---
+        let iconView = NSImageView(frame: NSRect(x: (width - 68) / 2, y: height - 90, width: 68, height: 68))
+        iconView.image = appIcon
+        iconView.imageScaling = .scaleProportionallyUpOrDown
+        visualEffect.addSubview(iconView)
+        
+        // --- 2. Title ---
+        let titleLabel = NSTextField(frame: NSRect(x: 20, y: height - 124, width: width - 40, height: 26))
+        titleLabel.stringValue = "SweePurge"
+        titleLabel.font = NSFont.systemFont(ofSize: 20, weight: .bold)
+        titleLabel.alignment = .center
+        titleLabel.isBezeled = false
+        titleLabel.drawsBackground = false
+        titleLabel.isEditable = false
+        titleLabel.isSelectable = false
+        visualEffect.addSubview(titleLabel)
+        
+        // --- 3. Subtitle ---
+        let subtitleLabel = NSTextField(frame: NSRect(x: 20, y: height - 146, width: width - 40, height: 18))
+        subtitleLabel.stringValue = "Universal Mac Storage & Cache Purger"
+        subtitleLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        subtitleLabel.textColor = NSColor.secondaryLabelColor
+        subtitleLabel.alignment = .center
+        subtitleLabel.isBezeled = false
+        subtitleLabel.drawsBackground = false
+        subtitleLabel.isEditable = false
+        subtitleLabel.isSelectable = false
+        visualEffect.addSubview(subtitleLabel)
+        
+        // --- 4. Feature Card (Centered Box) ---
+        let cardWidth = width - 60
+        let cardHeight: CGFloat = 100
+        let cardY = height - 258
+        let cardView = NSBox(frame: NSRect(x: 30, y: cardY, width: cardWidth, height: cardHeight))
+        cardView.boxType = .custom
+        cardView.borderColor = NSColor.separatorColor.withAlphaComponent(0.2)
+        cardView.borderWidth = 1
+        cardView.cornerRadius = 10
+        cardView.fillColor = NSColor.controlBackgroundColor.withAlphaComponent(0.4)
+        
+        let features = [
+            "• 400+ Apps Caches, Adobe Media Scratch & Dev Artifacts",
+            "• macOS System Data, Time Machine Snapshots & Logs",
+            "• Saved Application States, Stale Downloads & Trash"
+        ]
+        
+        let cardContent = NSTextField(frame: NSRect(x: 16, y: 12, width: cardWidth - 32, height: cardHeight - 24))
+        cardContent.stringValue = features.joined(separator: "\n\n")
+        cardContent.font = NSFont.systemFont(ofSize: 11.5, weight: .regular)
+        cardContent.textColor = NSColor.labelColor
+        cardContent.isBezeled = false
+        cardContent.drawsBackground = false
+        cardContent.isEditable = false
+        cardContent.isSelectable = false
+        cardView.addSubview(cardContent)
+        visualEffect.addSubview(cardView)
+        
+        // --- 5. Safety Indicator ---
+        let safetyLabel = NSTextField(frame: NSRect(x: 30, y: height - 286, width: width - 60, height: 18))
+        safetyLabel.stringValue = "✓ 100% Safe: Personal files, active projects & app licenses untouched"
+        safetyLabel.font = NSFont.systemFont(ofSize: 10.5, weight: .medium)
+        safetyLabel.textColor = NSColor.systemGreen
+        safetyLabel.alignment = .center
+        safetyLabel.isBezeled = false
+        safetyLabel.drawsBackground = false
+        safetyLabel.isEditable = false
+        safetyLabel.isSelectable = false
+        visualEffect.addSubview(safetyLabel)
+        
+        // --- 6. FDA Helper Notice (if needed) ---
+        var currentY: CGFloat = height - 316
+        if !hasFDA {
+            let fdaBtn = NSButton(frame: NSRect(x: (width - 240) / 2, y: currentY, width: 240, height: 22))
+            fdaBtn.title = "⚠️ Deep Cleaning: Enable Full Disk Access"
+            fdaBtn.bezelStyle = .inline
+            fdaBtn.isBordered = false
+            fdaBtn.font = NSFont.systemFont(ofSize: 10.5, weight: .medium)
+            fdaBtn.contentTintColor = NSColor.systemOrange
+            fdaBtn.target = self
+            fdaBtn.action = #selector(openFDA)
+            visualEffect.addSubview(fdaBtn)
+            currentY -= 30
+        } else {
+            currentY -= 10
+        }
+        
+        // --- 7. Buttons (Cleanly Spaced & Sized) ---
+        let btnWidth: CGFloat = 160
+        let btnHeight: CGFloat = 32
+        let totalBtnWidth = (btnWidth * 2) + 14
+        let btnStartX = (width - totalBtnWidth) / 2
+        
+        let cancelBtn = NSButton(frame: NSRect(x: btnStartX, y: currentY, width: btnWidth, height: btnHeight))
+        cancelBtn.title = "Cancel"
+        cancelBtn.bezelStyle = .rounded
+        cancelBtn.target = self
+        cancelBtn.action = #selector(cancelClicked)
+        visualEffect.addSubview(cancelBtn)
+        
+        let cleanBtn = NSButton(frame: NSRect(x: btnStartX + btnWidth + 14, y: currentY, width: btnWidth, height: btnHeight))
+        cleanBtn.title = "Clean All Caches Now"
+        cleanBtn.bezelStyle = .rounded
+        cleanBtn.keyEquivalent = "\r" // Enter key default
+        cleanBtn.contentTintColor = NSColor.controlAccentColor
+        cleanBtn.target = self
+        cleanBtn.action = #selector(cleanClicked)
+        visualEffect.addSubview(cleanBtn)
+        
+        // --- 8. Footer Developer Credit (Perfect Absolute Center) ---
+        let creditContainer = NSView(frame: NSRect(x: 0, y: 12, width: width, height: 32))
+        
+        let creditLine1 = NSTextField(frame: NSRect(x: 0, y: 16, width: width, height: 14))
+        creditLine1.stringValue = "Developed by"
+        creditLine1.font = NSFont.systemFont(ofSize: 8.5, weight: .regular)
+        creditLine1.textColor = NSColor.secondaryLabelColor.withAlphaComponent(0.35)
+        creditLine1.alignment = .center
+        creditLine1.isBezeled = false
+        creditLine1.drawsBackground = false
+        creditLine1.isEditable = false
+        creditLine1.isSelectable = false
+        creditContainer.addSubview(creditLine1)
+        
+        let creditLine2 = NSTextField(frame: NSRect(x: 0, y: 0, width: width, height: 16))
+        creditLine2.stringValue = "A M Pabel, Team Captain at FramEmpire"
+        creditLine2.font = NSFont.systemFont(ofSize: 9.5, weight: .regular)
+        creditLine2.textColor = NSColor.secondaryLabelColor.withAlphaComponent(0.40)
+        creditLine2.alignment = .center
+        creditLine2.isBezeled = false
+        creditLine2.drawsBackground = false
+        creditLine2.isEditable = false
+        creditLine2.isSelectable = false
+        creditContainer.addSubview(creditLine2)
+        
+        visualEffect.addSubview(creditContainer)
+    }
+    
+    func show() {
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+    
+    @objc func openFDA() {
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles") {
             NSWorkspace.shared.open(url)
         }
     }
     
-    func createSubtleCreditView(width: CGFloat) -> NSView {
-        let container = NSView(frame: NSRect(x: 0, y: 0, width: width, height: 34))
-        
-        // Line 1: Developed by (smaller, centered)
-        let line1 = NSTextField(frame: NSRect(x: 0, y: 17, width: width, height: 14))
-        line1.stringValue = "Developed by"
-        line1.isBezeled = false
-        line1.drawsBackground = false
-        line1.isEditable = false
-        line1.isSelectable = false
-        line1.font = NSFont.systemFont(ofSize: 8.5, weight: .regular)
-        line1.textColor = NSColor.secondaryLabelColor.withAlphaComponent(0.35)
-        line1.alignment = .center
-        
-        // Line 2: Name & Designation (centered)
-        let line2 = NSTextField(frame: NSRect(x: 0, y: 0, width: width, height: 16))
-        line2.stringValue = "A M Pabel, Team Captain at FramEmpire"
-        line2.isBezeled = false
-        line2.drawsBackground = false
-        line2.isEditable = false
-        line2.isSelectable = false
-        line2.font = NSFont.systemFont(ofSize: 9.5, weight: .regular)
-        line2.textColor = NSColor.secondaryLabelColor.withAlphaComponent(0.40)
-        line2.alignment = .center
-        
-        container.addSubview(line1)
-        container.addSubview(line2)
-        return container
+    @objc func cancelClicked() {
+        window.close()
+        exit(0)
     }
     
-    func getFreeDiskSpaceBytes() -> Int64 {
+    @objc func cleanClicked() {
+        window.close()
+        SweePurgeEngine.run(homeDir: homeDir, appIcon: appIcon)
+    }
+    
+    func windowWillClose(_ notification: Notification) {
+        exit(0)
+    }
+}
+
+class SweePurgeEngine {
+    static func run(homeDir: String, appIcon: NSImage?) {
+        let freeBefore = getFreeDiskSpaceBytes()
+        
+        performDeepUniversalCleanup(homeDir: homeDir)
+        
+        let freeAfter = getFreeDiskSpaceBytes()
+        let reclaimedBytes = max(0, freeAfter - freeBefore)
+        let reclaimedFormatted = formatBytes(reclaimedBytes)
+        
+        sendNotification(
+            title: "SweePurge: Mac Optimized",
+            message: "Reclaimed \(reclaimedFormatted) across 400+ apps & system storage."
+        )
+        
+        showSuccessDialog(reclaimed: reclaimedFormatted, freeTotal: formatBytes(freeAfter), appIcon: appIcon)
+    }
+    
+    static func showSuccessDialog(reclaimed: String, freeTotal: String, appIcon: NSImage?) {
+        let width: CGFloat = 420
+        let height: CGFloat = 310
+        
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: width, height: height),
+            styleMask: [.titled, .closable, .fullSizeContentView],
+            backing: .buffered,
+            defer: false
+        )
+        window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
+        window.isMovableByWindowBackground = true
+        window.center()
+        
+        let visualEffect = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: width, height: height))
+        visualEffect.blendingMode = .behindWindow
+        visualEffect.state = .active
+        visualEffect.material = .popover
+        window.contentView = visualEffect
+        
+        let iconView = NSImageView(frame: NSRect(x: (width - 56) / 2, y: height - 76, width: 56, height: 56))
+        iconView.image = appIcon
+        iconView.imageScaling = .scaleProportionallyUpOrDown
+        visualEffect.addSubview(iconView)
+        
+        let titleLabel = NSTextField(frame: NSRect(x: 20, y: height - 108, width: width - 40, height: 24))
+        titleLabel.stringValue = "Optimization Complete"
+        titleLabel.font = NSFont.systemFont(ofSize: 18, weight: .bold)
+        titleLabel.alignment = .center
+        titleLabel.isBezeled = false
+        titleLabel.drawsBackground = false
+        titleLabel.isEditable = false
+        visualEffect.addSubview(titleLabel)
+        
+        let infoLabel = NSTextField(frame: NSRect(x: 30, y: height - 180, width: width - 60, height: 60))
+        infoLabel.stringValue = """
+        SweePurge has successfully cleaned your Mac.
+
+        • Storage Reclaimed: \(reclaimed)
+        • Total Available Disk Space: \(freeTotal)
+        """
+        infoLabel.font = NSFont.systemFont(ofSize: 12, weight: .regular)
+        infoLabel.alignment = .center
+        infoLabel.isBezeled = false
+        infoLabel.drawsBackground = false
+        infoLabel.isEditable = false
+        visualEffect.addSubview(infoLabel)
+        
+        let doneBtn = NSButton(frame: NSRect(x: (width - 140) / 2, y: 64, width: 140, height: 32))
+        doneBtn.title = "Done"
+        doneBtn.bezelStyle = .rounded
+        doneBtn.keyEquivalent = "\r"
+        doneBtn.target = NSApp
+        doneBtn.action = #selector(NSApplication.terminate(_:))
+        visualEffect.addSubview(doneBtn)
+        
+        let creditContainer = NSView(frame: NSRect(x: 0, y: 12, width: width, height: 32))
+        let creditLine1 = NSTextField(frame: NSRect(x: 0, y: 16, width: width, height: 14))
+        creditLine1.stringValue = "Developed by"
+        creditLine1.font = NSFont.systemFont(ofSize: 8.5, weight: .regular)
+        creditLine1.textColor = NSColor.secondaryLabelColor.withAlphaComponent(0.35)
+        creditLine1.alignment = .center
+        creditLine1.isBezeled = false
+        creditLine1.drawsBackground = false
+        creditLine1.isEditable = false
+        creditContainer.addSubview(creditLine1)
+        
+        let creditLine2 = NSTextField(frame: NSRect(x: 0, y: 0, width: width, height: 16))
+        creditLine2.stringValue = "A M Pabel, Team Captain at FramEmpire"
+        creditLine2.font = NSFont.systemFont(ofSize: 9.5, weight: .regular)
+        creditLine2.textColor = NSColor.secondaryLabelColor.withAlphaComponent(0.40)
+        creditLine2.alignment = .center
+        creditLine2.isBezeled = false
+        creditLine2.drawsBackground = false
+        creditLine2.isEditable = false
+        creditContainer.addSubview(creditLine2)
+        visualEffect.addSubview(creditContainer)
+        
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        NSApp.run()
+    }
+    
+    static func getFreeDiskSpaceBytes() -> Int64 {
         do {
             let values = try URL(fileURLWithPath: "/").resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey, .volumeAvailableCapacityKey])
             if let available = values.volumeAvailableCapacityForImportantUsage {
@@ -164,26 +322,21 @@ class SweePurgeApp: NSObject, NSApplicationDelegate {
         return attrs?[.systemFreeSize] as? Int64 ?? 0
     }
     
-    func formatBytes(_ bytes: Int64) -> String {
+    static func formatBytes(_ bytes: Int64) -> String {
         let formatter = ByteCountFormatter()
         formatter.allowedUnits = [.useGB, .useMB]
         formatter.countStyle = .file
         return formatter.string(fromByteCount: bytes)
     }
     
-    func performDeepUniversalCleanup(homeDir: String) {
+    static func performDeepUniversalCleanup(homeDir: String) {
         let fm = FileManager.default
         
-        // ==========================================
         // 1. TIER 1: GLOBAL USER & SYSTEM CACHES
-        // ==========================================
         cleanDirectoryContents("\(homeDir)/Library/Caches")
         cleanDirectoryContents("/Library/Caches")
         
-        // ==========================================
-        // 2. TIER 2: ELECTRON & DESKTOP APP INTERNAL CACHES
-        // (Safely touches only cache folders, leaves login & settings 100% intact)
-        // ==========================================
+        // 2. TIER 2: ELECTRON & DESKTOP APPS
         let appSupportDir = "\(homeDir)/Library/Application Support"
         if let apps = try? fm.contentsOfDirectory(atPath: appSupportDir) {
             let cacheFolderNames = [
@@ -200,9 +353,7 @@ class SweePurgeApp: NSObject, NSApplicationDelegate {
             }
         }
         
-        // ==========================================
         // 3. TIER 3: PRO VIDEO, 3D & AUDIO CREATIVE SUITES
-        // ==========================================
         let adobePaths = [
             "\(homeDir)/Library/Application Support/Adobe/Common/Media Cache Files",
             "\(homeDir)/Library/Application Support/Adobe/Common/Media Cache",
@@ -244,9 +395,7 @@ class SweePurgeApp: NSObject, NSApplicationDelegate {
         cleanDirectoryContents("\(homeDir)/Library/Application Support/Ableton/Live Database/Cache")
         cleanDirectoryContents("\(homeDir)/Music/Audio Music Apps/Freeze Files")
         
-        // ==========================================
         // 4. TIER 4: DEVELOPER & BUILD TOOLCHAINS
-        // ==========================================
         let devCaches = [
             "\(homeDir)/Library/Developer/Xcode/DerivedData",
             "\(homeDir)/Library/Developer/Xcode/Archives",
@@ -279,35 +428,25 @@ class SweePurgeApp: NSObject, NSApplicationDelegate {
         runProcess(path: "/usr/local/bin/docker", args: ["builder", "prune", "-f"])
         runProcess(path: "/opt/homebrew/bin/docker", args: ["builder", "prune", "-f"])
         
-        // ==========================================
         // 5. TIER 5: DEEP JUNK, SAVED STATES & STALE DOWNLOADS
-        // ==========================================
-        // Saved Application States (frozen background window caches)
         cleanDirectoryContents("\(homeDir)/Library/Saved Application State")
-        
-        // Incomplete/stale downloads in ~/Downloads (*.crdownload, *.part, *.download)
         cleanStaleIncompleteDownloads(in: "\(homeDir)/Downloads")
         
-        // User & System Logs
         cleanDirectoryContents("\(homeDir)/Library/Logs")
         cleanDirectoryContents("/Library/Logs")
         cleanDirectoryContents("\(homeDir)/Library/Logs/DiagnosticReports")
         cleanDirectoryContents("/Library/Logs/DiagnosticReports")
         cleanDirectoryContents("\(homeDir)/Library/Application Support/CrashReporter")
         
-        // Empty User Trash
         cleanDirectoryContents("\(homeDir)/.Trash")
-        
-        // Time Machine Local Snapshots (APFS System Data bloat)
         purgeTimeMachineLocalSnapshots()
         
-        // Reset QuickLook Thumbnail cache & Font Database
         runProcess(path: "/usr/bin/qlmanage", args: ["-r", "cache"])
         runProcess(path: "/usr/bin/qlmanage", args: ["-r"])
         runProcess(path: "/usr/bin/atsutil", args: ["databases", "-removeUser"])
     }
     
-    func cleanDirectoryContents(_ path: String) {
+    static func cleanDirectoryContents(_ path: String) {
         let fm = FileManager.default
         var isDir: ObjCBool = false
         guard fm.fileExists(atPath: path, isDirectory: &isDir), isDir.boolValue else { return }
@@ -319,7 +458,7 @@ class SweePurgeApp: NSObject, NSApplicationDelegate {
         }
     }
     
-    func cleanWildcardSubfolders(base: String, childPattern: String) {
+    static func cleanWildcardSubfolders(base: String, childPattern: String) {
         let fm = FileManager.default
         guard let subdirs = try? fm.contentsOfDirectory(atPath: base) else { return }
         
@@ -335,7 +474,7 @@ class SweePurgeApp: NSObject, NSApplicationDelegate {
         }
     }
     
-    func cleanStaleIncompleteDownloads(in downloadsPath: String) {
+    static func cleanStaleIncompleteDownloads(in downloadsPath: String) {
         let fm = FileManager.default
         guard let files = try? fm.contentsOfDirectory(atPath: downloadsPath) else { return }
         let incompleteExtensions = ["crdownload", "part", "download"]
@@ -349,7 +488,7 @@ class SweePurgeApp: NSObject, NSApplicationDelegate {
         }
     }
     
-    func purgeTimeMachineLocalSnapshots() {
+    static func purgeTimeMachineLocalSnapshots() {
         let pipe = Pipe()
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/tmutil")
@@ -379,7 +518,7 @@ class SweePurgeApp: NSObject, NSApplicationDelegate {
     }
     
     @discardableResult
-    func runProcess(path: String, args: [String]) -> Int32 {
+    static func runProcess(path: String, args: [String]) -> Int32 {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: path)
         process.arguments = args
@@ -394,7 +533,7 @@ class SweePurgeApp: NSObject, NSApplicationDelegate {
         }
     }
     
-    func sendNotification(title: String, message: String) {
+    static func sendNotification(title: String, message: String) {
         let escapedTitle = title.replacingOccurrences(of: "\"", with: "\\\"")
         let escapedMsg = message.replacingOccurrences(of: "\"", with: "\\\"")
         let script = "display notification \"\(escapedMsg)\" with title \"\(escapedTitle)\""
@@ -405,9 +544,21 @@ class SweePurgeApp: NSObject, NSApplicationDelegate {
     }
 }
 
-// Entry Point
+// App Delegate
+class AppDelegate: NSObject, NSApplicationDelegate {
+    var windowController: SweePurgeWindowController?
+    
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        let homeDir = FileManager.default.homeDirectoryForCurrentUser.path
+        let appIcon = NSImage(contentsOfFile: Bundle.main.path(forResource: "AppIcon", ofType: "icns") ?? "") ?? NSApp.applicationIconImage
+        
+        windowController = SweePurgeWindowController(homeDir: homeDir, appIcon: appIcon)
+        windowController?.show()
+    }
+}
+
 let app = NSApplication.shared
-let delegate = SweePurgeApp()
+let delegate = AppDelegate()
 app.delegate = delegate
 app.setActivationPolicy(.regular)
 app.run()
